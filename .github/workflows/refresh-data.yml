@@ -1,0 +1,47 @@
+# Scheduled data refresh. Rebuilds every city's dataset from cached and fresh sources, checks source health,
+# and opens a pull request with the new files so a person reviews changes before they ship.
+name: Refresh neighborhood data
+
+on:
+  schedule:
+    - cron: '17 9 * * 1' # Mondays 09:17 UTC; incident portals update daily to quarterly
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Restore source cache
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: raw-${{ github.run_id }}
+          restore-keys: raw-
+      - name: Ingest
+        env:
+          INGEST_CONTACT: ${{ vars.INGEST_CONTACT }}
+          SOCRATA_APP_TOKEN: ${{ secrets.SOCRATA_APP_TOKEN }}
+        run: npm run ingest
+      - name: Source health
+        run: npm run data:health
+        continue-on-error: true
+      - run: npm test
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: data-refresh
+          commit-message: 'data: scheduled refresh'
+          title: 'Scheduled data refresh'
+          body: 'Automated refresh of public/data. Review `npm run data:health` output in the workflow log before merging.'
+          add-paths: public/data

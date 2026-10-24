@@ -1,0 +1,48 @@
+{
+  "name": "relocate-fit",
+  "version": "0.1.0",
+  "description": "Neighborhood fit planner for Chicago, New York City, San Francisco and Austin",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "start": "node --env-file-if-exists=.env server/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "ingest": "node --env-file-if-exists=.env scripts/ingest/index.ts",
+    "ingest:refresh": "node --env-file-if-exists=.env scripts/ingest/index.ts --refresh",
+    "data:health": "node scripts/health.ts",
+    "e2e": "node scripts/e2e.ts",
+    "ingest:manifest": "node scripts/ingest/index.ts --manifest-only"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kuko798/new-grad.git"
+  },
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/kuko798/new-grad/issues"
+  },
+  "homepage": "https://github.com/kuko798/new-grad#readme",
+  "dependencies": {
+    "maplibre-gl": "^4.7.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "exceljs": "^4.4.0",
+    "playwright-core": "^1.64.1",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.5",
+    "vitest": "^3.2.7"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  }
+}
