@@ -9,7 +9,7 @@ const BASEMAP = 'https://tiles.openfreemap.org/styles/positron';
 const FALLBACK_STYLE: StyleSpecification = {
   version: 8,
   sources: {},
-  layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#e9ede4' } }],
+  layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#f0f2f6' } }],
 };
 
 export type HoodState = 'match' | 'fail' | 'unverified';
@@ -77,7 +77,7 @@ export default function NeighborhoodMap(props: MapProps) {
         type: 'fill',
         source: 'hoods',
         paint: {
-          'fill-color': ['match', ['get', 'state'], 'match', '#3c7357', 'unverified', '#7d8899', '#9aa3af'],
+          'fill-color': ['match', ['get', 'state'], 'match', '#335cff', 'unverified', '#7d8899', '#9aa3af'],
           'fill-opacity': ['match', ['get', 'state'], 'match', ['interpolate', ['linear'], ['get', 'fit'], 0, 0.16, 100, 0.78], 'unverified', 0.32, 0.42],
         },
       }, beforeLabels);
