@@ -100,7 +100,7 @@ PORT=8787 DATA_DIR=/var/lib/landing/data node server/index.ts
 Or with Docker: `docker build -t landing . && docker run -p 8787:8787 -v landing-data:/app/data landing`.
 
 Put it behind HTTPS. The server sends a strict Content-Security-Policy that allows only its own origin,
-OpenFreeMap tiles and Google Fonts. If you change tile or font providers, update `SECURITY_HEADERS` in
+OpenFreeMap tiles and the bundled Geist fonts. If you change tile or font providers, update `SECURITY_HEADERS` in
 `server/index.ts`. When behind a proxy, make sure `X-Forwarded-For` carries the client IP so geocoder rate
 limits apply per person.
 

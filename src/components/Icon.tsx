@@ -1,5 +1,7 @@
 // One outline icon set, 1.5px strokes on a 24px grid.
 const PATHS = {
+  arrowUpRight: 'M5 19 19 5M5 5h14v14',
+  arrowUp: 'M12 20V4m-6 6 6-6 6 6',
   map: 'M9 4 3 6.5v13.5L9 17.5l6 2.5 6-2.5V4l-6 2.5L9 4Zm0 0v13.5m6-11v13.5',
   compare: 'M4 5h4v14H4zM10 5h4v14h-4zM16 5h4v14h-4z',
   saved: 'M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1Z',
@@ -45,10 +47,10 @@ export function Icon({ name, size = 18, filled = false, label }: { name: IconNam
 export function Mark({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="7" fill="#0a0a0a" />
-      <path d="M8 9h7v6H8zM8 17h7v6H8z" fill="#fff" opacity=".28" />
-      <path d="M17 9h7v14h-7z" fill="#fff" />
-      <circle cx="20.5" cy="16" r="2" fill="#0a0a0a" />
+      <rect width="32" height="32" rx="10" fill="#dcecba" />
+      <path d="M8 9h7v6H8zM8 17h7v6H8z" fill="#244d3c" opacity=".35" />
+      <path d="M17 9h7v14h-7z" fill="#244d3c" />
+      <circle cx="20.5" cy="16" r="2" fill="#dcecba" />
     </svg>
   );
 }

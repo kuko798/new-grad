@@ -3,20 +3,18 @@ import { windowLabel } from '../lib/format.ts';
 import type { CityId, DataManifest } from '../lib/types.ts';
 import { CITY_NAMES, CITY_ORDER, useManifest } from '../state/data.ts';
 import { useStore } from '../state/store.tsx';
-import { Mark } from '../components/Icon.tsx';
+import { Icon, Mark } from '../components/Icon.tsx';
+import { NeighborhoodScene } from '../components/NeighborhoodScene.tsx';
 
-function Outline({ preview, label }: { preview: DataManifest['cities'][number]['preview']; label: string }) {
-  return (
-    <svg viewBox={`-2 -2 104 ${preview.height + 4}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={label}>
-      {preview.paths.map((d, i) => (
-        <path key={i} d={d} fill="#dce1e7" stroke="#ffffff" strokeWidth={0.35} strokeLinejoin="round" />
-      ))}
-    </svg>
-  );
-}
+const CITY_DETAILS: Record<CityId, { state: string; character: string; coordinates: string }> = {
+  chicago: { state: 'Illinois', character: 'Big city. Neighborhood soul.', coordinates: '41.8781° N · 87.6298° W' },
+  nyc: { state: 'New York', character: 'A world on every block.', coordinates: '40.7128° N · 74.0060° W' },
+  sf: { state: 'California', character: 'Find your side of the hill.', coordinates: '37.7749° N · 122.4194° W' },
+  austin: { state: 'Texas', character: 'A little more room to be you.', coordinates: '30.2672° N · 97.7431° W' },
+};
 
-function compact(n: number) {
-  return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)} million` : `${Math.round(n / 1000).toLocaleString('en-US')},000`;
+function Outline({ preview }: { preview: DataManifest['cities'][number]['preview'] }) {
+  return <svg viewBox={`-2 -2 104 ${preview.height + 4}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">{preview.paths.map((d, i) => <path key={i} d={d} strokeWidth={0.4} strokeLinejoin="round" />)}</svg>;
 }
 
 export function HomePage() {
@@ -24,95 +22,71 @@ export function HomePage() {
   const { prefs, setPrefs } = useStore();
   const navigate = useNavigate();
   const byCity = new Map(manifest.status === 'ready' ? manifest.data.cities.map((c) => [c.city, c] as const) : []);
-
+  const neighborhoodCount = manifest.status === 'ready' ? manifest.data.cities.reduce((sum, city) => sum + city.neighborhoods, 0) : null;
   const choose = (city: CityId) => {
     setPrefs((p) => ({ ...p, city, destinations: p.city === city ? p.destinations : [] }));
     navigate(prefs.onboarded ? `/${city}` : '/start');
   };
 
   return (
-    <div className="page">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Mark size={24} />
-        <span style={{ fontWeight: 700, fontSize: 16 }}>Landing</span>
-      </div>
+    <div className="home-page">
+      <header className="home-header">
+        <Link to="/" className="wordmark" aria-label="Landing home"><Mark size={30} />Landing<span className="wordmark-period">.</span></Link>
+        <nav className="home-nav" aria-label="Discover Landing"><a href="#cities">Explore cities</a><a href="#how-it-works">How it works</a><Link to="/data">Our approach <Icon name="external" size={13} /></Link></nav>
+        <Link to={prefs.onboarded && prefs.city ? `/${prefs.city}` : '/start'} className="btn home-header-cta">{prefs.onboarded ? 'Your neighborhoods' : 'Find your place'}<Icon name="chevron" size={15} /></Link>
+      </header>
+
       <section className="home-hero" aria-labelledby="home-title">
-        <div>
-          <h1 id="home-title" className="home-title">Find neighborhoods that fit your move</h1>
-          <p className="home-lede">
-            Set your rent limit and commute, then rank neighborhoods in Chicago, New York, San Francisco and Austin by what matters to you. Every
-            figure shows its source and date.
-          </p>
-          <div style={{ display: 'flex', gap: 8, marginTop: 24, flexWrap: 'wrap' }}>
-            <Link className="btn btn-primary" to="/start" style={{ height: 40, padding: '0 18px' }}>
-              Start with your budget
-            </Link>
-            {prefs.onboarded && prefs.city ? (
-              <Link className="btn" to={`/${prefs.city}`} style={{ height: 40 }}>
-                Back to {CITY_NAMES[prefs.city]}
-              </Link>
-            ) : null}
-          </div>
-          <p className="muted" style={{ marginTop: 24, maxWidth: '46ch' }}>
-            Free, with no account. Your budget, pay and addresses stay in this browser; shared links carry only neighborhood names and priority levels.
-          </p>
+        <div className="hero-copy">
+          <p className="eyebrow"><span className="status-dot" /> A fresh start, a little more clarity</p>
+          <h1 id="home-title" className="home-title">A new city.<br />A new chapter.<br /><em>Your kind of place.</em></h1>
+          <p className="home-lede">The right neighborhood changes everything. Find the one that fits your budget, your commute, and the way you want to live.</p>
+          <div className="hero-actions"><Link className="btn btn-primary hero-cta" to="/start">Find my neighborhood <Icon name="chevron" size={18} /></Link><a className="hero-secondary" href="#cities">Explore the cities <Icon name="arrowUpRight" size={13} /></a></div>
+          <div className="hero-assurance"><Icon name="check" size={15} /><span>Free to explore</span><span className="assurance-dot">·</span><span>No account needed</span><span className="assurance-dot">·</span><span>Always your call</span></div>
         </div>
-
-        <div aria-labelledby="cities-title">
-          <h2 id="cities-title" className="section-title" style={{ marginBottom: 12 }}>Or choose a city to begin</h2>
-          <div className="city-grid">
-            {CITY_ORDER.map((c) => {
-              const m = byCity.get(c);
-              const ready = manifest.status === 'ready';
-              return (
-                <button key={c} type="button" className={`city-card ${prefs.city === c ? 'is-current' : ''}`} onClick={() => choose(c)} disabled={ready && !m} aria-describedby={`meta-${c}`}>
-                  <span className="city-name">{CITY_NAMES[c]}</span>
-                  {m ? <Outline preview={m.preview} label={`Outline of the ${m.neighborhoods} covered areas`} /> : <span className="skeleton" style={{ display: 'block', height: 132 }} />}
-                  <span id={`meta-${c}`} className="city-meta">
-                    {m ? (
-                      <>
-                        {m.neighborhoods} {m.geographyLabel.toLowerCase()}s · {compact(m.population)} residents
-                        <br />
-                        {m.incidentWindow ? `Incidents ${windowLabel(m.incidentWindow)}` : 'Incident data unavailable'}
-                      </>
-                    ) : manifest.status === 'error' ? (
-                      'Could not load city data'
-                    ) : ready ? (
-                      'Data not loaded yet'
-                    ) : (
-                      'Loading…'
-                    )}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          {manifest.status === 'error' ? (
-            <p className="notice" style={{ marginTop: 12 }}>
-              City data could not load. <button className="btn btn-small" onClick={manifest.retry}>Try again</button>
-            </p>
-          ) : null}
+        <div className="hero-art">
+          <div className="art-topline"><span>THE ART OF FEELING AT HOME</span><Icon name="arrowUpRight" size={13} /></div>
+          <NeighborhoodScene />
+          <div className="art-caption"><span>A shorter commute.<br />A favorite corner café.<br /><strong>A place that feels like you.</strong></span><span className="art-compass" aria-hidden="true">N<Icon name="arrowUp" size={25} /></span></div>
+          <div className="art-note"><span className="art-note-icon"><Icon name="pin" size={20} /></span><span>More than a pin on a map.<strong>Find your everyday.</strong></span></div>
         </div>
       </section>
 
-      <section className="how" aria-label="How matching works">
-        <div>
-          <h2>Your limits come first</h2>
-          <p>A neighborhood above your rent limit, or over a commute you mark as a limit, is never shown as a match. When nothing fits, you see which limit is the conflict and what changing it would add.</p>
+      <div className="trust-strip"><p>BIG LIFE DECISION.<br /><strong>A clearer place to start.</strong></p><div><Icon name="map" size={20} /><span><strong>4 cities</strong> to make your own</span></div><div><Icon name="pin" size={20} /><span><strong>{neighborhoodCount ?? 'Hundreds of'} neighborhoods</strong> to discover</span></div><div><Icon name="data" size={20} /><span><strong>Real, sourced data.</strong> Clearly explained.</span></div></div>
+
+      <section id="cities" className="cities-section" aria-labelledby="cities-title">
+        <div className="section-heading"><div><p className="eyebrow">FOUR CITIES. ENDLESS POSSIBILITIES.</p><h2 id="cities-title">Where’s your next chapter?</h2></div><p>Different rhythms. Different possibilities.<br />Let’s find where you fit.</p></div>
+        <div className="city-grid">
+          {CITY_ORDER.map((c, i) => {
+            const m = byCity.get(c);
+            const detail = CITY_DETAILS[c];
+            return (
+              <button key={c} type="button" className={`city-card city-${c} ${prefs.city === c ? 'is-current' : ''}`} onClick={() => choose(c)} disabled={manifest.status !== 'ready' || !m} aria-describedby={`meta-${c}`}>
+                <span className="city-card-heading"><span className="city-name">{CITY_NAMES[c]}</span><span className="city-arrow" aria-hidden="true"><Icon name="chevron" size={17} /></span></span>
+                <span className="city-state">{detail.state}</span>
+                <span className="city-art"><span className="city-index" aria-hidden="true">0{i + 1}</span>{m ? <Outline preview={m.preview} /> : <span className="skeleton" />}<span className="city-coordinates">{detail.coordinates}</span></span>
+                <span className="city-character">{detail.character}</span>
+                <span id={`meta-${c}`} className="city-meta">{m ? `${m.neighborhoods} neighborhoods to explore` : manifest.status === 'error' ? 'City data unavailable' : 'Loading neighborhoods…'}<Icon name="arrowUpRight" size={13} /></span>
+                {m?.incidentWindow ? <span className="sr-only">Reported incidents: {windowLabel(m.incidentWindow)}</span> : null}
+              </button>
+            );
+          })}
         </div>
-        <div>
-          <h2>Then your priorities</h2>
-          <p>Fit is a weighted average of the things you rank, each compared within the city. Open any neighborhood to see what each priority added to its score, and change the weights.</p>
-        </div>
-        <div>
-          <h2>Reported incidents, not a safety grade</h2>
-          <p>We show police-reported incident rates per resident, and a 0–10 index of them within each city, with dates and coverage. We never label a place safe or dangerous. Missing data is marked as missing, not counted as low.</p>
+        {manifest.status === 'error' ? <p className="notice">City data could not load. <button className="btn btn-small" onClick={manifest.retry}>Try again</button></p> : null}
+      </section>
+
+      <section id="how-it-works" className="how-section" aria-labelledby="how-title">
+        <div className="section-heading"><div><p className="eyebrow">LESS OVERWHELM. MORE POSSIBILITY.</p><h2 id="how-title">Your move, made a little simpler.</h2></div><Link to="/start" className="text-link">Let’s get started <Icon name="arrowUpRight" size={13} /></Link></div>
+        <div className="how">
+          <article><span className="how-number">01 <Icon name="sliders" size={22} /></span><h3>Start with your everyday.</h3><p>Your rent limit. Your commute. The things you’d love around the corner. Tell us what matters, and what’s non-negotiable.</p><span className="how-tag">Your life sets the brief</span></article>
+          <article><span className="how-number">02 <Icon name="map" size={22} /></span><h3>Meet your neighborhoods.</h3><p>Explore places that fit your limits, ranked by your priorities. See the trade-offs clearly, and adjust as you go.</p><span className="how-tag">A fit you can actually explain</span></article>
+          <article><span className="how-number">03 <Icon name="saved" size={22} /></span><h3>Make your shortlist.</h3><p>Save the places you love, compare up to three side by side, and share your favorites. The next chapter is yours to choose.</p><span className="how-tag">From “what if” to “this could be it”</span></article>
         </div>
       </section>
 
-      <p className="small muted" style={{ marginTop: 48 }}>
-        Data from city open-data portals, the U.S. Census Bureau, HUD and OpenStreetMap contributors. <Link className="text-link" to="/data">Sources and methods</Link>
-      </p>
+      <section className="method-banner" aria-labelledby="method-title"><div className="method-symbol" aria-hidden="true"><Icon name="data" size={38} /></div><div><p className="eyebrow">A LITTLE TRANSPARENCY GOES A LONG WAY</p><h2 id="method-title">Real places. Real data. An honest picture.</h2><p>Every figure has a source and a date. Missing data stays missing. Reported incidents are shown with context, never as a safety grade. Your preferences are saved in your browser.</p></div><Link to="/data" className="btn">Behind the numbers <Icon name="chevron" size={16} /></Link></section>
+
+      <footer className="home-footer"><div><Link to="/" className="wordmark"><Mark size={24} />Landing<span className="wordmark-period">.</span></Link><p>A better place to begin.</p></div><p>Built on open data. Made for your next chapter.<br /><Link to="/data" className="text-link">Sources, methods & limitations <Icon name="arrowUpRight" size={13} /></Link></p><a href="#home-title" className="back-top">Back to top <Icon name="arrowUp" size={13} /></a></footer>
     </div>
   );
 }
