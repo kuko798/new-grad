@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CityDataset, CityId, DataManifest } from '../lib/types.ts';
 
-export const CITY_ORDER: CityId[] = ['chicago', 'nyc', 'sf', 'austin'];
-export const CITY_NAMES: Record<CityId, string> = { chicago: 'Chicago', nyc: 'New York City', sf: 'San Francisco', austin: 'Austin' };
-export const isCityId = (s: string | undefined): s is CityId => !!s && (CITY_ORDER as string[]).includes(s);
+import { CITIES, CITY_IDS, isCityId as isKnownCity } from '../lib/cities.ts';
+
+export const CITY_ORDER: CityId[] = CITY_IDS;
+export const CITY_NAMES: Record<CityId, string> = Object.fromEntries(CITIES.map((c) => [c.id, c.name]));
+export const isCityId = (s: string | undefined): s is CityId => isKnownCity(s);
 
 const cache = new Map<string, Promise<unknown>>();
 

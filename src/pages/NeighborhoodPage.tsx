@@ -6,7 +6,7 @@ import { PreferencesDrawer } from '../components/PreferencesDrawer.tsx';
 import { SponsorSlot } from '../components/SponsorSlot.tsx';
 import { moveInCost, type CostLine } from '../lib/cost.ts';
 import { INDEX_WEIGHTS, incidentIndex } from '../lib/incidentIndex.ts';
-import { dayMonthYear, dec1, int, money, relativeWords, trendWords, windowLabel } from '../lib/format.ts';
+import { dayMonthYear, dec1, int, money, relativeWords, trendWords, windowLabel, labelText } from '../lib/format.ts';
 import { zillowFilterHints, zillowRentalsUrl } from '../lib/links.ts';
 import { BEDROOM_LABELS, BEDROOM_SHORT, MODE_LABELS } from '../lib/prefs.ts';
 import { cityStats, evaluateCity } from '../lib/scoring.ts';
@@ -39,7 +39,7 @@ export default function NeighborhoodPage() {
       </div>
     );
   const hood = data.data.neighborhoods.find((h) => h.id === id);
-  if (!hood) return <NotFound message={`No ${data.data.geographyLabel.toLowerCase()} with that id in ${data.data.name}. It may not be ranked; see the coverage notes in Data and methods.`} />;
+  if (!hood) return <NotFound message={`No ${labelText(data.data.geographyLabel)} with that id in ${data.data.name}. It may not be ranked; see the coverage notes in Data and methods.`} />;
   return <Detail dataset={data.data} id={hood.id} />;
 }
 
@@ -165,7 +165,7 @@ function Detail({ dataset, id }: { dataset: CityDataset; id: string }) {
               <span className="small muted">{m ? `${windowLabel(m.window)}, by ${m.dateBasis} date` : 'Unavailable'}</span>
             </div>
             {!h.incidents || !m ? (
-              <div className="empty">Incident data for {dataset.name} could not be loaded in the latest refresh. Nothing here is counted as low.</div>
+              <div className="empty">{dataset.incidentsUnavailable ? `${dataset.incidentsUnavailable} Incident priorities are scored at the city median for every area, so they do not change the ranking.` : `Incident data for ${dataset.name} could not be loaded in the latest refresh. Nothing here is counted as low.`}</div>
             ) : (
               <>
                 {(() => {
@@ -213,7 +213,7 @@ function Detail({ dataset, id }: { dataset: CityDataset; id: string }) {
                           )}
                         </div>
                         <div className="small muted" style={{ textAlign: 'right' }}>{relativeWords(x.cityPercentile, dataset.name)}</div>
-                        <div className="small muted" style={{ gridColumn: '1 / -1' }}>{trendWords(x.count, x.priorCount)}</div>
+                        <div className="small muted" style={{ gridColumn: '1 / -1' }}>{trendWords(x.count, x.priorCount, m.priorComplete !== false)}</div>
                       </div>
                     );
                   })}

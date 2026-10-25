@@ -8,10 +8,11 @@ interface ManifestSource {
   status: string;
 }
 interface Manifest {
-  cities: Array<{ city: string; isDemo: boolean; generatedAt: string; sources: ManifestSource[] }>;
+  cities: Array<{ city: string; isDemo: boolean; generatedAt: string; incidentWindow?: { start: string; end: string } | null; sources: ManifestSource[] }>;
 }
 
-const CITIES = ['chicago', 'nyc', 'sf', 'austin'];
+// Same ids as src/lib/cities.ts (kept inline: Vercel bundles this function on its own).
+const CITIES = ["nyc", "la", "houston", "chicago", "sanantonio", "phoenix", "austin", "philadelphia", "dallas", "sandiego", "columbus", "jacksonville", "seattle", "fortworth", "charlotte", "nashville", "denver", "sf", "indianapolis", "boston", "okc", "atlanta", "tucson", "portland", "sanjose", "raleigh", "coloradosprings", "detroit", "milwaukee", "lasvegas", "minneapolis", "louisville", "albuquerque", "memphis", "omaha", "baltimore", "mesa", "kansascity", "orlando", "fresno"];
 
 export async function GET(request: Request): Promise<Response> {
   const now = Date.now();
@@ -27,6 +28,11 @@ export async function GET(request: Request): Promise<Response> {
     if (!m) return { city, ok: false, generatedAt: null, problems: ['No dataset built for this city'] };
     const problems: string[] = [];
     if (m.isDemo) problems.push('Serving demo data');
+    // The incident window should end within about four months of the build; older means the publisher stopped updating.
+    if (m.incidentWindow) {
+      const lag = Math.floor((new Date(m.generatedAt).getTime() - new Date(m.incidentWindow.end).getTime()) / 86_400_000);
+      if (lag > 120) problems.push(`Reported incidents end ${m.incidentWindow.end}, ${lag} days before the last build: the publisher may have stopped updating`);
+    }
     for (const s of m.sources) {
       const days = Math.floor((now - new Date(s.retrievedAt).getTime()) / 86_400_000);
       if (s.status === 'failed') problems.push(`${s.name}: failed in the last refresh`);

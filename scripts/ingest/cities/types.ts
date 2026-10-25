@@ -17,6 +17,10 @@ export interface IncidentContext {
   blockGroupShares(geoid: string): Array<[string, number]>;
   /** Neighborhood id for a name as the police dataset spells it. */
   nameToNeighborhood(name: string): string | null;
+  /** Neighborhood id for a 5-digit ZIP code: the ZIP area itself in ZIP-based cities, otherwise null. */
+  locateZip(zip: string): string | null;
+  /** Whether a point lies inside the city limits; absent for hand-written adapters. */
+  inCity?(p: LngLat): boolean;
 }
 
 export type KindCounts = Record<IncidentKind, Map<string, number>>;
@@ -26,6 +30,8 @@ export interface IncidentResult {
   prior: KindCounts;
   window: { start: string; end: string };
   priorWindow: { start: string; end: string };
+  /** False when the published data does not reach back to the start of the prior window. */
+  priorComplete?: boolean;
   dateBasis: 'occurrence' | 'report';
   /** Records in the current window (violent + property) that were not placed in a covered neighborhood. */
   unplaced: number;

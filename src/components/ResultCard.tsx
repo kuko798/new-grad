@@ -55,7 +55,7 @@ export function IncidentStrip({ ev, dataset }: { ev: Evaluation; dataset: CityDa
             <div className="figure-value num">
               {m?.ratePer1k != null ? <>{dec1(m.ratePer1k)}<span className="unit"> /1k</span></> : <span className="dash">—</span>}
             </div>
-            <div className="figure-note">{!inc ? 'Not loaded' : m?.ratePer1k == null ? 'Too few residents' : relativeWords(m.cityPercentile, dataset.name).replace(` in ${dataset.name}`, '').replace(` ${dataset.name}`, '')}</div>
+            <div className="figure-note">{!inc ? (dataset.incidentsUnavailable ? 'Not published' : 'Not loaded') : m?.ratePer1k == null ? 'Too few residents' : relativeWords(m.cityPercentile, dataset.name).replace(` in ${dataset.name}`, '').replace(` ${dataset.name}`, '')}</div>
           </div>
         );
       })}

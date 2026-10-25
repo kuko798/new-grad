@@ -27,10 +27,14 @@ export function relativeWords(p: number | null, city: string) {
   return `Among the highest fifth in ${city}`;
 }
 
-export function trendWords(count: number, prior: number) {
+export function trendWords(count: number, prior: number, priorComplete = true) {
+  if (!priorComplete) return 'No comparison with the previous 12 months: the published data does not reach back that far';
   if (prior === 0 && count === 0) return 'None reported in either year';
   if (prior === 0) return `${count} reported, none the year before`;
   const change = (count - prior) / prior;
   const sign = change > 0 ? '+' : '';
   return `${sign}${Math.round(change * 100)}% vs the previous 12 months (${int(prior)})`;
 }
+
+/** A geography label in running text: lowercased except acronyms ("ZIP code area", "statistical neighborhood"). */
+export const labelText = (label: string) => label.replace(/^([A-Z])([a-z])/, (_, a: string, b: string) => a.toLowerCase() + b);

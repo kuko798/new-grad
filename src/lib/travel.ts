@@ -3,28 +3,12 @@
 // returned with each estimate so the interface can show exactly how it was made.
 import { haversineM } from './geo.ts';
 import type { TravelMode } from './prefs.ts';
+import { cityInfo } from './cities.ts';
 import type { CityId, LngLat } from './types.ts';
 
-export interface CityTravel {
-  /** Assumed door-to-door average driving speed at commute times, km/h. */
-  driveKmh: number;
-  /** Assumed average rail speed including stops, km/h. */
-  railKmh: number;
-  busKmh: number;
-  fare: number;
-  monthlyPass: number;
-  passName: string;
-  fareUrl: string;
-  /** When these fares were last checked by a person; shown next to the figures. */
-  faresCheckedAt: string;
-}
-
-export const CITY_TRAVEL: Record<CityId, CityTravel> = {
-  nyc: { driveKmh: 19, railKmh: 28, busKmh: 12, fare: 2.9, monthlyPass: 132, passName: '30-day unlimited', fareUrl: 'https://www.mta.info/fares', faresCheckedAt: '2025' },
-  chicago: { driveKmh: 26, railKmh: 30, busKmh: 14, fare: 2.5, monthlyPass: 75, passName: 'CTA 30-day pass', fareUrl: 'https://www.transitchicago.com/fares/', faresCheckedAt: '2025' },
-  sf: { driveKmh: 22, railKmh: 26, busKmh: 12, fare: 3, monthlyPass: 86, passName: 'Muni monthly pass', fareUrl: 'https://www.sfmta.com/fares', faresCheckedAt: '2025' },
-  austin: { driveKmh: 34, railKmh: 40, busKmh: 16, fare: 1.25, monthlyPass: 41.25, passName: 'CapMetro 31-day pass', fareUrl: 'https://www.capmetro.org/fares', faresCheckedAt: '2025' },
-};
+export type { CityTravel } from './cities.ts';
+/** Travel assumptions for a city (see src/lib/cities.ts). */
+export const travelFor = (city: CityId) => cityInfo(city).travel;
 
 export const ROUTE_FACTOR = { walk: 1.25, bike: 1.3, drive: 1.35, rail: 1.25, bus: 1.35 };
 export const WALK_M_PER_MIN = 80; // 4.8 km/h
@@ -65,7 +49,7 @@ export function estimateCommute(
   toRailM: number | null,
   mode: TravelMode,
 ): CommuteEstimate {
-  const t = CITY_TRAVEL[city];
+  const t = travelFor(city);
   const km = haversineM(from, to) / 1000;
   const dist = `${r1(km)} km straight-line`;
 
@@ -125,11 +109,13 @@ export function monthlyTransportCost(
   carCostPerKm: number,
   carFixed: number | null,
 ): { amount: number; basis: string } {
-  const t = CITY_TRAVEL[city];
+  const t = travelFor(city);
   const roundTrips = trips.reduce((s, x) => s + x.daysPerWeek * WEEKS_PER_MONTH, 0);
   if (roundTrips === 0) return { amount: mode === 'drive' && carFixed ? carFixed : 0, basis: 'No commute days entered' };
   if (mode === 'transit') {
+    if (t.fare === 0) return { amount: 0, basis: `${t.agency} is fare-free` };
     const payPerRide = roundTrips * 2 * t.fare;
+    if (t.monthlyPass === null) return { amount: Math.round(payPerRide), basis: `${Math.round(roundTrips * 2)} rides × ${t.fare.toFixed(2)} fare (${t.agency} has no monthly pass)` };
     if (payPerRide <= t.monthlyPass)
       return { amount: Math.round(payPerRide), basis: `${Math.round(roundTrips * 2)} rides × $${t.fare.toFixed(2)} fare (cheaper than the ${t.passName})` };
     return { amount: Math.round(t.monthlyPass), basis: `${t.passName}, $${t.monthlyPass.toFixed(2)}` };

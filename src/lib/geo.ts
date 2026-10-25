@@ -172,6 +172,13 @@ export class PolygonIndex<T extends { geometry: MultiPolygon }> {
     }
   }
 
+  /** Every item containing the point (more than one only where polygons overlap). */
+  findAll(p: LngLat): T[] {
+    const list = this.cells.get(`${Math.floor(p[0] / this.size)}:${Math.floor(p[1] / this.size)}`);
+    if (!list) return [];
+    return list.filter(({ item, box }) => p[0] >= box[0] && p[0] <= box[2] && p[1] >= box[1] && p[1] <= box[3] && pointInMultiPolygon(p, item.geometry)).map((x) => x.item);
+  }
+
   find(p: LngLat): T | null {
     const list = this.cells.get(`${Math.floor(p[0] / this.size)}:${Math.floor(p[1] / this.size)}`);
     if (!list) return null;

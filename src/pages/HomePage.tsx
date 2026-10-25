@@ -1,17 +1,28 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { windowLabel } from '../lib/format.ts';
+import { cityInfo } from '../lib/cities.ts';
+import { windowLabel, labelText } from '../lib/format.ts';
 import type { CityId, DataManifest } from '../lib/types.ts';
 import { CITY_NAMES, CITY_ORDER, useManifest } from '../state/data.ts';
 import { useStore } from '../state/store.tsx';
 import { Icon, Mark } from '../components/Icon.tsx';
 import { NeighborhoodScene } from '../components/NeighborhoodScene.tsx';
 
+/** Hand-written lines for the first four cities; the others show facts from their data. */
 const CITY_DETAILS: Record<CityId, { state: string; character: string; coordinates: string }> = {
   chicago: { state: 'Illinois', character: 'Big city. Neighborhood soul.', coordinates: '41.8781° N · 87.6298° W' },
   nyc: { state: 'New York', character: 'A world on every block.', coordinates: '40.7128° N · 74.0060° W' },
   sf: { state: 'California', character: 'Find your side of the hill.', coordinates: '37.7749° N · 122.4194° W' },
   austin: { state: 'Texas', character: 'A little more room to be you.', coordinates: '30.2672° N · 97.7431° W' },
 };
+
+const FEATURED = 8;
+
+function coordinates(center: [number, number] | undefined) {
+  if (!center) return '';
+  const [lng, lat] = center;
+  return `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'} · ${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`;
+}
 
 function Outline({ preview }: { preview: DataManifest['cities'][number]['preview'] }) {
   return <svg viewBox={`-2 -2 104 ${preview.height + 4}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">{preview.paths.map((d, i) => <path key={i} d={d} strokeWidth={0.4} strokeLinejoin="round" />)}</svg>;
@@ -23,6 +34,16 @@ export function HomePage() {
   const navigate = useNavigate();
   const byCity = new Map(manifest.status === 'ready' ? manifest.data.cities.map((c) => [c.city, c] as const) : []);
   const neighborhoodCount = manifest.status === 'ready' ? manifest.data.cities.reduce((sum, city) => sum + city.neighborhoods, 0) : null;
+  const [query, setQuery] = useState('');
+  const [showAll, setShowAll] = useState(false);
+  const q = query.trim().toLowerCase();
+  const matching = CITY_ORDER.filter((c) => {
+    if (!q) return true;
+    const info = cityInfo(c);
+    return [info.name, info.state, info.stateName].some((v) => v.toLowerCase().includes(q));
+  });
+  const visible = q || showAll ? matching : matching.slice(0, FEATURED);
+  const cityCount = CITY_ORDER.length;
   const choose = (city: CityId) => {
     setPrefs((p) => ({ ...p, city, destinations: p.city === city ? p.destinations : [] }));
     navigate(prefs.onboarded ? `/${city}` : '/start');
@@ -52,26 +73,45 @@ export function HomePage() {
         </div>
       </section>
 
-      <div className="trust-strip"><p>BIG LIFE DECISION.<br /><strong>A clearer place to start.</strong></p><div><Icon name="map" size={20} /><span><strong>4 cities</strong> to make your own</span></div><div><Icon name="pin" size={20} /><span><strong>{neighborhoodCount ?? 'Hundreds of'} neighborhoods</strong> to discover</span></div><div><Icon name="data" size={20} /><span><strong>Real, sourced data.</strong> Clearly explained.</span></div></div>
+      <div className="trust-strip"><p>BIG LIFE DECISION.<br /><strong>A clearer place to start.</strong></p><div><Icon name="map" size={20} /><span><strong>{cityCount} cities</strong> to make your own</span></div><div><Icon name="pin" size={20} /><span><strong>{neighborhoodCount ?? 'Hundreds of'} neighborhoods</strong> to discover</span></div><div><Icon name="data" size={20} /><span><strong>Real, sourced data.</strong> Clearly explained.</span></div></div>
 
       <section id="cities" className="cities-section" aria-labelledby="cities-title">
-        <div className="section-heading"><div><p className="eyebrow">FOUR CITIES. ENDLESS POSSIBILITIES.</p><h2 id="cities-title">Where’s your next chapter?</h2></div><p>Different rhythms. Different possibilities.<br />Let’s find where you fit.</p></div>
+        <div className="section-heading"><div><p className="eyebrow">{cityCount} CITIES. ENDLESS POSSIBILITIES.</p><h2 id="cities-title">Where’s your next chapter?</h2></div><p>Different rhythms. Different possibilities.<br />Let’s find where you fit.</p></div>
+        <div className="city-search">
+          <label htmlFor="city-search" className="sr-only">Find a city</label>
+          <input id="city-search" className="input" type="search" placeholder={`Search ${cityCount} cities by name or state`} value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" />
+          <span className="small muted" aria-live="polite">{q ? `${matching.length} ${matching.length === 1 ? 'city' : 'cities'}` : 'Ordered by new residents in 2024'}</span>
+        </div>
         <div className="city-grid">
-          {CITY_ORDER.map((c, i) => {
+          {visible.map((c) => {
+            const i = CITY_ORDER.indexOf(c);
             const m = byCity.get(c);
-            const detail = CITY_DETAILS[c];
+            const info = cityInfo(c);
+            const detail = CITY_DETAILS[c] ?? {
+              state: info.stateName,
+              coordinates: coordinates(m?.center),
+              character: m
+                ? `${m.geographyKind === 'zcta' ? 'ZIP code areas' : `${m.neighborhoods} ${labelText(m.geographyLabel)}s`} · ${m.incidentWindow ? `incidents through ${windowLabel(m.incidentWindow).split(' – ')[1]}` : 'incident data not published'}`
+                : '',
+            };
             return (
               <button key={c} type="button" className={`city-card city-${c} ${prefs.city === c ? 'is-current' : ''}`} onClick={() => choose(c)} disabled={manifest.status !== 'ready' || !m} aria-describedby={`meta-${c}`}>
                 <span className="city-card-heading"><span className="city-name">{CITY_NAMES[c]}</span><span className="city-arrow" aria-hidden="true"><Icon name="chevron" size={17} /></span></span>
                 <span className="city-state">{detail.state}</span>
-                <span className="city-art"><span className="city-index" aria-hidden="true">0{i + 1}</span>{m ? <Outline preview={m.preview} /> : <span className="skeleton" />}<span className="city-coordinates">{detail.coordinates}</span></span>
+                <span className="city-art"><span className="city-index" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{m ? <Outline preview={m.preview} /> : <span className="skeleton" />}<span className="city-coordinates">{detail.coordinates}</span></span>
                 <span className="city-character">{detail.character}</span>
-                <span id={`meta-${c}`} className="city-meta">{m ? `${m.neighborhoods} neighborhoods to explore` : manifest.status === 'error' ? 'City data unavailable' : 'Loading neighborhoods…'}<Icon name="arrowUpRight" size={13} /></span>
+                <span id={`meta-${c}`} className="city-meta">{m ? `${m.neighborhoods} ${m.geographyKind === 'zcta' ? 'ZIP areas' : 'neighborhoods'} to explore` : manifest.status === 'error' ? 'City data unavailable' : manifest.status === 'ready' ? 'Data not built yet' : 'Loading neighborhoods…'}<Icon name="arrowUpRight" size={13} /></span>
                 {m?.incidentWindow ? <span className="sr-only">Reported incidents: {windowLabel(m.incidentWindow)}</span> : null}
               </button>
             );
           })}
         </div>
+        {!q && matching.length > FEATURED ? (
+          <div className="city-more">
+            <button type="button" className="btn" onClick={() => setShowAll((v) => !v)} aria-expanded={showAll}>{showAll ? 'Show fewer cities' : `Show all ${matching.length} cities`}</button>
+          </div>
+        ) : null}
+        {q && !matching.length ? <p className="empty" style={{ marginTop: 12 }}>No covered city matches “{query}”.</p> : null}
         {manifest.status === 'error' ? <p className="notice">City data could not load. <button className="btn btn-small" onClick={manifest.retry}>Try again</button></p> : null}
       </section>
 

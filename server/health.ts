@@ -1,9 +1,12 @@
 // Source-health check shared by the server's /api/health endpoint and `npm run data:health`.
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { CITY_IDS } from '../src/lib/cities.ts';
 import type { CityId, DataManifest } from '../src/lib/types.ts';
 
-const CITIES: CityId[] = ['chicago', 'nyc', 'sf', 'austin'];
+const CITIES: CityId[] = CITY_IDS;
+
+
 
 export interface HealthReport {
   status: 'ok' | 'degraded';
@@ -23,6 +26,11 @@ export async function checkManifest(dataDir: string, now = Date.now()): Promise<
     if (!m) return { city, ok: false, generatedAt: null, problems: ['No dataset built for this city'] };
     const problems: string[] = [];
     if (m.isDemo) problems.push('Serving demo data');
+    // The incident window should end within about four months of the build; older means the publisher stopped updating.
+    if (m.incidentWindow) {
+      const lag = Math.floor((new Date(m.generatedAt).getTime() - new Date(m.incidentWindow.end).getTime()) / 86_400_000);
+      if (lag > 120) problems.push(`Reported incidents end ${m.incidentWindow.end}, ${lag} days before the last build: the publisher may have stopped updating`);
+    }
     for (const s of m.sources) {
       const days = Math.floor((now - new Date(s.retrievedAt).getTime()) / 86_400_000);
       if (s.status === 'failed') problems.push(`${s.name}: failed in the last refresh`);

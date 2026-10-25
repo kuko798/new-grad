@@ -13,11 +13,9 @@ export interface SafmrRow {
   br3: number;
 }
 
-/** ZIPs of interest share these three-digit prefixes; filtering keeps the cache small. */
-const ZIP_PREFIXES = ['606', '607', '100', '101', '102', '103', '104', '110', '111', '112', '113', '114', '116', '941', '787', '786'];
 
 export async function safmrByZip() {
-  return cached('hud/safmr-fy2026', 120, async () => {
+  return cached('hud/safmr-fy2026-all', 120, async () => {
     // huduser.gov answers non-browser user agents with an empty 202 while it runs a bot check.
     const res = await fetchWithRetry(SAFMR_URL, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; relocate-fit-ingest/0.1)' } });
     const buf = await res.arrayBuffer();
@@ -30,7 +28,7 @@ export async function safmrByZip() {
       if (i === 1) return;
       const v = row.values as unknown[];
       const zip = String(v[1]).padStart(5, '0');
-      if (!ZIP_PREFIXES.some((p) => zip.startsWith(p)) || out[zip]) return;
+      if (out[zip]) return;
       out[zip] = { br0: Number(v[4]), br1: Number(v[7]), br2: Number(v[10]), br3: Number(v[13]) };
     });
     return out;

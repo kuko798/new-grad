@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { dayMonthYear, windowLabel } from '../lib/format.ts';
-import { CITY_TRAVEL, BUS_ACCESS_MIN, BUS_WAIT_MIN, MAX_STATION_WALK_M, RAIL_WAIT_MIN, ROUTE_FACTOR } from '../lib/travel.ts';
+import { travelFor, BUS_ACCESS_MIN, BUS_WAIT_MIN, MAX_STATION_WALK_M, RAIL_WAIT_MIN, ROUTE_FACTOR } from '../lib/travel.ts';
 import type { CityId, SourceRecord } from '../lib/types.ts';
 import { CITY_NAMES, CITY_ORDER, freshness, useCity, useManifest } from '../state/data.ts';
 
@@ -21,22 +21,33 @@ function SourceRow({ s }: { s: SourceRecord }) {
       </td>
       <td className="small">{s.observationPeriod}<div className="muted">{s.updateFrequency}</div></td>
       <td className="num small">
-        {s.status === 'failed' ? <span className="pill pill-negative">Unavailable</span> : f.stale ? <span className="pill pill-warning">Stale, {f.days} days</span> : <span className="pill pill-positive">Current</span>}
+        {s.status === 'unavailable' ? <span className="pill">Not published</span> : s.status === 'failed' ? <span className="pill pill-negative">Unavailable</span> : f.stale ? <span className="pill pill-warning">Stale, {f.days} days</span> : <span className="pill pill-positive">Current</span>}
         <div className="muted" style={{ marginTop: 4 }}>{dayMonthYear(s.retrievedAt)}</div>
       </td>
     </tr>
   );
 }
 
-function IncidentMethods({ city }: { city: CityId }) {
-  const d = useCity(city);
-  if (d.status !== 'ready') return <div className="skeleton" style={{ height: 80 }} />;
+/** One city's incident method, loaded only when the reader opens it (40 city files would be several megabytes). */
+function IncidentMethods({ city, summary }: { city: CityId; summary: string }) {
+  const [open, setOpen] = useState(false);
+  const d = useCity(open ? city : null);
+  return (
+    <details className="panel method-details" onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
+      <summary><span className="section-title">{CITY_NAMES[city]}</span><span className="small muted">{summary}</span></summary>
+      {open ? <IncidentMethodBody d={d} /> : null}
+    </details>
+  );
+}
+
+function IncidentMethodBody({ d }: { d: ReturnType<typeof useCity> }) {
+  if (d.status === 'loading') return <div className="skeleton" style={{ height: 80, marginTop: 10 }} />;
+  if (d.status === 'error') return <p className="small" style={{ marginTop: 8 }}>Couldn't load this city's data. <button className="btn btn-small" onClick={d.retry}>Retry</button></p>;
   const m = d.data.incidentMethod;
   return (
-    <section className="panel">
-      <h3 className="section-title">{CITY_NAMES[city]}</h3>
+    <>
       {!m ? (
-        <p className="muted" style={{ marginTop: 6 }}>Incident data did not load in the latest refresh. Incident measures for this city are shown as unavailable and scored at the city median.</p>
+        <p className="muted" style={{ marginTop: 6 }}>{d.data.incidentsUnavailable ?? 'Incident data did not load in the latest refresh.'} Incident measures for this city are shown as unavailable and scored at the city median, so they do not change rankings.</p>
       ) : (
         <div className="prose small" style={{ marginTop: 6 }}>
           <p><b style={{ fontWeight: 500 }}>Window:</b> {windowLabel(m.window)} by {m.dateBasis} date, compared with {windowLabel(m.priorWindow)} for the trend. {Math.round(m.unlocatedShare * 100)}% of violent and property records in the window were not placed in a covered area.</p>
@@ -45,10 +56,11 @@ function IncidentMethods({ city }: { city: CityId }) {
           <p><b style={{ fontWeight: 500 }}>Vehicle-related:</b> {m.definitions.vehicle}</p>
           <p><b style={{ fontWeight: 500 }}>Deduplication:</b> {m.dedupe}</p>
           {m.notes.map((n) => <p key={n}>{n}</p>)}
-          <p className="muted">{d.data.coverage}</p>
+          {m.priorComplete === false ? <p>The published data does not cover the whole previous 12 months, so no trend is shown.</p> : null}
         </div>
       )}
-    </section>
+      <p className="small muted" style={{ marginTop: 8 }}>{d.data.coverage}</p>
+    </>
   );
 }
 
@@ -82,7 +94,11 @@ export default function DataPage() {
           <p>Rates divide each neighborhood's incidents by its residents, so places with many workers, shoppers or visitors (downtowns, nightlife districts, transit hubs) show high rates that overstate what residents report. These are flagged using Census LEHD job counts. Percentiles compare neighborhoods within one city only: each department classifies, geocodes and publishes differently, so a Chicago percentile and an Austin percentile do not measure the same thing.</p>
         </div>
         <div className="stack" style={{ marginTop: 12 }}>
-          {CITY_ORDER.map((c) => <IncidentMethods key={c} city={c} />)}
+          {CITY_ORDER.map((c) => {
+            const mf = manifest.status === 'ready' ? manifest.data.cities.find((x) => x.city === c) : undefined;
+            const summary = !mf ? 'Not built yet' : mf.incidentWindow ? `${windowLabel(mf.incidentWindow)} · ${mf.geographyKind === 'zcta' ? 'ZIP areas' : mf.geographyLabel}` : 'Incidents not published';
+            return <IncidentMethods key={c} city={c} summary={summary} />;
+          })}
         </div>
       </section>
 
@@ -105,12 +121,12 @@ export default function DataPage() {
             <thead><tr><th>City</th><th className="num">Driving km/h</th><th className="num">Rail km/h</th><th className="num">Bus km/h</th><th className="num">Fare</th><th className="num">Monthly pass</th></tr></thead>
             <tbody>
               {CITY_ORDER.map((c) => {
-                const t = CITY_TRAVEL[c];
+                const t = travelFor(c);
                 return (
                   <tr key={c}>
-                    <td>{CITY_NAMES[c]}<div className="small muted"><a className="text-link" href={t.fareUrl} target="_blank" rel="noopener noreferrer">Fares</a> last checked {t.faresCheckedAt}</div></td>
+                    <td>{CITY_NAMES[c]}<div className="small muted">{t.agency} · <a className="text-link" href={t.fareUrl} target="_blank" rel="noopener noreferrer">Fares</a> as published in {t.faresCheckedAt}</div></td>
                     <td className="num">{t.driveKmh}</td><td className="num">{t.railKmh}</td><td className="num">{t.busKmh}</td>
-                    <td className="num">${t.fare.toFixed(2)}</td><td className="num">${t.monthlyPass.toFixed(2)}</td>
+                    <td className="num">{t.fare === 0 ? 'Free' : `$${t.fare.toFixed(2)}`}</td><td className="num">{t.fare === 0 ? '—' : t.monthlyPass === null ? <span className="muted">None</span> : `$${t.monthlyPass.toFixed(2)}`}</td>
                   </tr>
                 );
               })}
@@ -132,12 +148,13 @@ export default function DataPage() {
         {manifest.status === 'ready'
           ? CITY_ORDER.map((c) => {
               const m = manifest.data.cities.find((x) => x.city === c);
+              const attention = m ? m.sources.filter((s) => s.status === 'failed' || freshness(s.retrievedAt, s.staleAfterDays).stale).length : 0;
               return (
-                <div key={c} className="panel" style={{ marginTop: 12 }}>
-                  <div className="panel-head">
-                    <h3 className="section-title">{CITY_NAMES[c]}</h3>
-                    <span className="small muted">{m ? `Built ${dayMonthYear(m.generatedAt)} · ${m.neighborhoods} areas${m.isDemo ? ' · DEMO DATA' : ''}` : 'Not loaded on this server'}</span>
-                  </div>
+                <details key={c} className="panel method-details" style={{ marginTop: 12 }}>
+                  <summary>
+                    <span className="section-title">{CITY_NAMES[c]}</span>
+                    <span className="small muted">{m ? `Built ${dayMonthYear(m.generatedAt)} · ${m.neighborhoods} areas${attention ? ` · ${attention} need attention` : ''}${m.isDemo ? ' · DEMO DATA' : ''}` : 'Not loaded on this server'}</span>
+                  </summary>
                   {m ? (
                     <div className="compare-scroll">
                       <table className="data">
@@ -146,7 +163,7 @@ export default function DataPage() {
                       </table>
                     </div>
                   ) : null}
-                </div>
+                </details>
               );
             })
           : null}
@@ -164,8 +181,10 @@ export default function DataPage() {
       <section style={{ marginTop: 32 }} aria-labelledby="limits">
         <h2 id="limits" className="section-title">Known limitations</h2>
         <ul className="reasons" style={{ marginTop: 8, maxWidth: '72ch' }}>
-          <li>Coverage is each city proper. Austin covers only the city's adopted neighborhood planning areas, which leave out much of northwest, far north and southwest Austin.</li>
-          <li>Neighborhood names follow official statistical geographies (community areas, NTAs, analysis neighborhoods, planning areas), which can differ from names people use or from Zillow's areas.</li>
+          <li>Coverage is each city proper (its legal city limits), not the metro area. Austin covers only the city's adopted neighborhood planning areas, which leave out much of northwest, far north and southwest Austin.</li>
+          <li>Neighborhood names follow each city's official geography (community areas, NTAs, super neighborhoods, neighborhood councils and so on), which can differ from names people use or from Zillow's areas.</li>
+          <li>Where a city publishes no clean neighborhood map, areas are ZIP code tabulation areas clipped to the city limits. They are larger than neighborhoods and are labeled with the mapped neighborhoods inside them.</li>
+          <li>Jacksonville, Oklahoma City, San José, Albuquerque, Mesa, Orlando and Fresno publish no usable incident-level crime data, so incident measures are unavailable there. A few departments publish only offense groups or omit some offenses; each city's definitions above say exactly what is counted.</li>
           <li>Rent benchmarks are ZIP- or tract-based averages; individual listings vary widely.</li>
           <li>Commute times are distance-based estimates, not scheduled trips.</li>
           <li>Amenity counts depend on OpenStreetMap completeness and say nothing about price or quality.</li>

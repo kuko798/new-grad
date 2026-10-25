@@ -4,17 +4,62 @@ Checked October 2026 while building the first datasets. Every source below was q
 "Access" column records what it actually took. Each source record in `public/data/<city>.json` carries its URL,
 license, observation period, retrieval time and staleness threshold, and `npm run data:health` reports on them.
 
-## Geographies
+## Cities and geographies
 
-Neighborhoods, ZIP codes, Census tracts and police districts are different geographies. Landing ranks the
-official neighborhood-scale statistical geography of each city and converts everything else into it:
+Forty cities, each within its legal limits (Census TIGER incorporated place). The original four keep hand-written
+adapters (`scripts/ingest/cities/`); the rest are declared in `scripts/ingest/registry.ts`, where each entry
+names its geography source, its incident source, the field mapping and the classification rules.
 
-| City | Geography ranked | Source | Count | Notes |
-| --- | --- | --- | --- | --- |
-| Chicago | Community areas | [Boundaries – Community Areas](https://data.cityofchicago.org/d/igwz-8jzy) | 77 | City proper. |
-| New York City | 2020 Neighborhood Tabulation Areas | [NYC Planning NTAs](https://data.cityofnewyork.us/d/9nt8-h7nd) | 197 residential (of 262) | All five boroughs. Non-residential NTAs (`ntatype` 5–9: parks, airports, cemeteries) are not ranked. |
-| San Francisco | Analysis neighborhoods | [DataSF Analysis Neighborhoods](https://data.sfgov.org/d/j2bu-swwd) | 39 ranked (of 41) | City and County of San Francisco only. Golden Gate Park and Lincoln Park have under 500 residents and are not ranked. |
-| Austin | Neighborhood planning areas | [Boundaries: City of Austin Neighborhoods](https://data.austintexas.gov/d/inrm-c3ee) | 65 | Planning areas cover central, east, south and north-central Austin only; much of northwest, far north and southwest Austin has none. Sub-district polygons sharing a name are dissolved. |
+A city uses its own neighborhood map only when it is a clean partition with names: the builder logs the share of
+2020 residents it covers and the share in overlapping polygons, and neighborhood-association layers (which overlap
+and leave gaps) are not used. Otherwise the city is divided into **ZIP Code Tabulation Areas clipped to the city
+limits**, labelled with the OpenStreetMap neighborhood names inside each. ZIP areas suit relocation: HUD's rent
+benchmark is natively ZIP-based, and Zillow searches by ZIP exactly.
+
+| City | Geography | Incident source | Notes |
+| --- | --- | --- | --- |
+| New York City | 2020 NTAs (NYC Planning) | NYPD complaints (Socrata) | Quarterly; non-residential NTAs not ranked |
+| Los Angeles | Certified neighborhood councils | LAPD NIBRS offenses (Socrata) | NIBRS since March 2024 |
+| Houston | Super neighborhoods | HPD NIBRS yearly CSVs | Monthly updates |
+| Chicago | Community areas | CPD crimes (Socrata) | Distinct case numbers |
+| San Antonio | ZIP areas | SAPD offenses (CKAN) | Placed by ZIP; no coordinates published |
+| Phoenix | ZIP areas | PPD crime data (CKAN) | UCR categories; placed by ZIP |
+| Austin | Neighborhood planning areas | APD crime reports (Socrata) | Partial city coverage; placed by block group |
+| Philadelphia | OpenDataPhilly neighborhoods (CC BY 4.0, Abaca Labs) | PPD Part I/II incidents (ArcGIS) | |
+| Dallas | ZIP areas | DPD incidents (Socrata) | Row per person involved; deduplicated; 2024 file uses older column names |
+| San Diego | SDPD neighborhoods (police beats) | SDPD NIBRS offenses (ArcGIS) | |
+| Columbus | ZIP areas | CPD incident reports joined to offense records (ArcGIS) | |
+| Jacksonville | ZIP areas | — | JSO publishes no incident-level data |
+| Seattle | Neighborhood Map Atlas | SPD crime data (Socrata) | |
+| Fort Worth | ZIP areas | FWPD crime data (ArcGIS) | Texas Penal Code descriptions matched by text |
+| Charlotte | ZIP areas | CMPD incidents (ArcGIS) | Highest offense per incident |
+| Nashville | ZIP areas | MNPD incidents (ArcGIS) | |
+| Denver | Statistical neighborhoods | DPD offenses (ArcGIS) | Sex offenses excluded from public file |
+| San Francisco | Analysis neighborhoods | SFPD incident reports (Socrata) | |
+| Indianapolis | ZIP areas | IMPD NIBRS (ArcGIS) | Placed by ZIP; no coordinates published |
+| Boston | BPDA neighborhoods | BPD incident reports (CKAN) | Some records withheld by state law |
+| Oklahoma City | ZIP areas | — | Monthly PDFs only |
+| Atlanta | Official neighborhoods (with NPU) | APD NIBRS (ArcGIS) | |
+| Tucson | ZIP areas | TPD incidents, yearly layers (ArcGIS) | Theft from vehicles not separable; a year appears only after it closes |
+| Portland | City neighborhoods | PPB offense data, yearly CSVs (Tableau) | Person crimes placed by PPB neighborhood |
+| San José | ZIP areas | — | Calls for service only |
+| Raleigh | ZIP areas | RPD incidents (ArcGIS) | Rape and most sex offenses withheld |
+| Colorado Springs | CSPD neighborhoods | CSPD crime level data (Socrata) | |
+| Detroit | City neighborhoods | DPD RMS incidents (ArcGIS) | |
+| Milwaukee | DCD neighborhoods | MPD NIBRS (CKAN) | |
+| Las Vegas | ZIP areas | LVMPD NIBRS (ArcGIS) | Data starts January 2025: no trend |
+| Minneapolis | City neighborhoods | MPD incidents, last two years (ArcGIS) | |
+| Louisville | ZIP areas | LMPD crime data, yearly layers (ArcGIS) | Placed by ZIP; no coordinates published |
+| Albuquerque | ZIP areas | — | Public layer is built from calls for service |
+| Memphis | Community neighborhoods | MPD public safety incidents (ArcGIS) | Sex offenses not in public file |
+| Omaha | ZIP areas | OPD incident data (ArcGIS) | Offense groups only: violent includes simple assault |
+| Baltimore | Neighborhood statistical areas | BPD NIBRS Group A (ArcGIS) | Only names and shapes are read from the boundary layer |
+| Mesa | ZIP areas | — | Incident data ends in 2019 |
+| Kansas City | ZIP areas | KCPD crime data, yearly (Socrata) | Row per person involved; deduplicated |
+| Orlando | City neighborhoods | — | Summaries are web pages only |
+| Fresno | ZIP areas | — | No incident-level open data |
+
+Where a dataset carries demographic fields about people (some do), they are never requested.
 
 ### Crosswalk (documented aggregation)
 
@@ -49,6 +94,13 @@ reflects subsidized and single-room units rather than market rents.
 Neither figure is a neighborhood asking rent, and the interface never calls it one.
 
 ## Reported incidents
+
+The table below describes the original four cities in detail; every other city's definitions, window, date basis,
+deduplication and notes are recorded in its dataset and shown on the Data and methods page. Most departments now
+publish FBI NIBRS codes, which map directly (violent: 09A, 11A–11C, 120, 13A; property: 200, 220, 23A–23H, 240;
+vehicle: 240, 23F, 23G). Departments that publish labels or local codes are mapped with explicit per-city patterns
+in the registry, and their definitions say so.
+
 
 | City | Dataset | Access | Date basis | Dedupe | Placement | Update cadence |
 | --- | --- | --- | --- | --- | --- | --- |

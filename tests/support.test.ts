@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { pointInMultiPolygon, simplifyMultiPolygon, multiPolygonAreaKm2 } from '../src/lib/geo.ts';
 import { percentileRanks } from '../src/lib/stats.ts';
-import { estimateCommute, monthlyTransportCost, CITY_TRAVEL } from '../src/lib/travel.ts';
+import { estimateCommute, monthlyTransportCost, travelFor } from '../src/lib/travel.ts';
 import { applyPriorityCode, compareShareUrl, parseCompareParams, priorityCode, zillowFilterHints, zillowRentalsUrl } from '../src/lib/links.ts';
 import { conflicts, scenarios } from '../src/lib/relax.ts';
 import { evaluateCity } from '../src/lib/scoring.ts';
@@ -71,10 +71,10 @@ describe('commute estimates', () => {
   });
 
   it('caps transit cost at the monthly pass', () => {
-    const t = CITY_TRAVEL.nyc;
-    expect(monthlyTransportCost('nyc', 'transit', [{ distanceKm: 5, daysPerWeek: 6 }], 0.14, null).amount).toBe(t.monthlyPass);
+    const t = travelFor('nyc');
+    expect(monthlyTransportCost('nyc', 'transit', [{ distanceKm: 5, daysPerWeek: 6 }], 0.14, null).amount).toBe(t.monthlyPass!);
     const oneDay = monthlyTransportCost('nyc', 'transit', [{ distanceKm: 5, daysPerWeek: 1 }], 0.14, null);
-    expect(oneDay.amount).toBeLessThan(t.monthlyPass);
+    expect(oneDay.amount).toBeLessThan(t.monthlyPass!);
   });
 });
 
@@ -198,5 +198,14 @@ describe('reported-incident index', () => {
     const evs = evaluateCity(ds, prefs({ affordability: 2 }));
     expect(evs.map((e) => e.components.map((c) => c.id))).toEqual(evs.map(() => evs[0].components.map((c) => c.id)));
     expect(evs[0].components.some((c) => (c.id as string) === 'incidentIndex')).toBe(false);
+  });
+});
+
+describe('fares across cities', () => {
+  it('charges nothing in fare-free systems and pays per ride where there is no pass', () => {
+    expect(monthlyTransportCost('tucson', 'transit', [{ distanceKm: 5, daysPerWeek: 5 }], 0.14, null).amount).toBe(0);
+    const hou = monthlyTransportCost('houston', 'transit', [{ distanceKm: 5, daysPerWeek: 5 }], 0.14, null);
+    expect(hou.amount).toBe(Math.round(5 * (52 / 12) * 2 * travelFor('houston').fare));
+    expect(hou.basis).toMatch(/no monthly pass/);
   });
 });

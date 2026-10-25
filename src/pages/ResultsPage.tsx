@@ -5,7 +5,7 @@ import type { HoodState } from '../components/NeighborhoodMap.tsx';
 import { PreferencesDrawer } from '../components/PreferencesDrawer.tsx';
 import { Segmented } from '../components/PreferenceFields.tsx';
 import { FitFigure, ResultCard } from '../components/ResultCard.tsx';
-import { money, windowLabel } from '../lib/format.ts';
+import { money, monthYear, windowLabel, labelText } from '../lib/format.ts';
 import { BEDROOM_SHORT, MODE_LABELS, type Preferences } from '../lib/prefs.ts';
 import { conflicts, scenarios } from '../lib/relax.ts';
 import { evaluateCity, partition, sortEvaluations, type Evaluation, type SortKey } from '../lib/scoring.ts';
@@ -177,7 +177,7 @@ function ResultsView({ dataset }: { dataset: CityDataset }) {
             </button>
           </div>
           <p className="small muted" style={{ marginTop: 4 }}>
-            <b className="ink" style={{ fontWeight: 500 }}>{matches.length} of {dataset.neighborhoods.length}</b> {dataset.geographyLabel.toLowerCase()}s fit your limits · {summary(prefs)}
+            <b className="ink" style={{ fontWeight: 500 }}>{matches.length} of {dataset.neighborhoods.length}</b> {labelText(dataset.geographyLabel)}s fit your limits · {summary(prefs)}
           </p>
           <div className="results-toolbar">
             <Segmented<SortKey>
@@ -207,6 +207,19 @@ function ResultsView({ dataset }: { dataset: CityDataset }) {
             <div className="notice" style={{ marginBottom: 8 }}>
               {staleSources.map((s) => s.name).join('; ')} {staleSources.length === 1 ? 'is' : 'are'} {staleSources.some((s) => s.status === 'failed') ? 'unavailable or out of date' : 'out of date'}. Affected figures are marked. <Link className="text-link" to="/data">Details</Link>
             </div>
+          ) : null}
+          {dataset.incidentsUnavailable ? (
+            <div className="notice notice-neutral" style={{ marginBottom: 8 }}>
+              Reported incidents are not available for {dataset.name}: {dataset.incidentsUnavailable.charAt(0).toLowerCase() + dataset.incidentsUnavailable.slice(1)} <Link className="text-link" to="/data#incidents">Why</Link>
+            </div>
+          ) : null}
+          {dataset.geographyKind === 'zcta' ? (
+            <div className="notice notice-neutral" style={{ marginBottom: 8 }}>
+              {dataset.name} publishes no clean neighborhood map, so these are ZIP code areas within the city limits.
+            </div>
+          ) : null}
+          {dataset.incidentMethod && Date.parse(dataset.generatedAt) - Date.parse(dataset.incidentMethod.window.end) > 182 * 86_400_000 ? (
+            <div className="notice" style={{ marginBottom: 8 }}>The newest reported-incident data {dataset.name} has published ends {monthYear(addYears(dataset.incidentMethod.window.end, 0))}; the department has not posted newer records.</div>
           ) : null}
           {moveAfterData ? (
             <div className="notice" style={{ marginBottom: 8 }}>Your move date is more than a year after the newest incident data here; patterns can change.</div>
@@ -267,7 +280,7 @@ function ResultsView({ dataset }: { dataset: CityDataset }) {
             destinations={prefs.destinations.map((d) => d.point)}
             onPickPoint={picking !== null ? onPick : null}
             followSelection
-            label={`Map of ${dataset.name} ${dataset.geographyLabel.toLowerCase()}s, shaded by preference fit. The list beside it has the same areas.`}
+            label={`Map of ${dataset.name} ${labelText(dataset.geographyLabel)}s, shaded by preference fit. The list beside it has the same areas.`}
           />
         </Suspense>
         {picking !== null ? (

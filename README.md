@@ -1,8 +1,11 @@
 # Landing
 
 A relocation planner that answers one question: **which neighborhoods fit my budget, commute, lifestyle and
-safety preferences?** It covers Chicago (77 community areas), New York City (197 residential NTAs, all five
-boroughs), San Francisco (39 analysis neighborhoods) and Austin (65 neighborhood planning areas).
+safety preferences?** It covers the 40 U.S. cities that gained the most new residents in 2024, from New York City
+and Los Angeles to Orlando and Fresno, each within its legal city limits. Cities that publish a clean official
+neighborhood map use it (community areas, NTAs, super neighborhoods, neighborhood councils); the rest are divided
+into ZIP code areas clipped to the city limits. Where a police department publishes incident-level data it is
+used; seven cities publish none, and the app says so.
 
 - Limits first: a rent limit, an optional total housing budget, and a commute limit that can be hard or soft.
   Nothing over a limit is ever shown as a match, and when nothing fits, the app says which limit is the
@@ -57,7 +60,8 @@ npm run ingest:manifest           # rebuild public/data/manifest.json only
 npm run data:health               # exit 1 if any source failed or is past its staleness threshold
 ```
 
-A full fresh run takes about 20 minutes (4–5 per city), mostly Overpass and the incident queries. Sources are cached in
+A full fresh run takes about three hours for 40 cities (4–6 minutes each), mostly Overpass and the incident
+queries; `--city a,b,c` builds a subset, and several subsets can run in parallel. Sources are cached in
 `data/raw` (git-ignored) with per-source lifetimes: incident queries 6 days, OSM 30 days, boundaries 30 days,
 HUD SAFMR 120 days, Census files a year. If a source fails, that city's dataset is still written with the
 measure marked unavailable, and the previous file is kept if the whole city fails.

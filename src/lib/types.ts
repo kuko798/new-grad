@@ -1,7 +1,8 @@
 // Shared data contract between the ingestion pipeline (scripts/ingest) and the app.
 // Every figure the app shows comes from a CityDataset file; nothing here is computed at request time.
 
-export type CityId = 'chicago' | 'nyc' | 'sf' | 'austin';
+/** A city id from src/lib/cities.ts, e.g. "chicago". */
+export type CityId = string;
 
 export type LngLat = [number, number];
 export type Ring = LngLat[];
@@ -11,7 +12,7 @@ export interface MultiPolygon {
   coordinates: Polygon[];
 }
 
-export type SourceStatus = 'ok' | 'stale' | 'failed' | 'demo';
+export type SourceStatus = 'ok' | 'stale' | 'failed' | 'demo' | 'unavailable';
 
 export interface SourceRecord {
   id: string;
@@ -110,6 +111,8 @@ export interface Neighborhood {
 export interface IncidentMethod {
   window: { start: string; end: string };
   priorWindow: { start: string; end: string };
+  /** False when the data does not cover the whole prior window, so no trend is shown. */
+  priorComplete?: boolean;
   /** Which date the window applies to: occurrence or report. */
   dateBasis: 'occurrence' | 'report';
   /** Records in the window that could not be placed in any covered neighborhood. */
@@ -127,7 +130,11 @@ export interface CityDataset {
   isDemo: boolean;
   generatedAt: string;
   geographyLabel: string;
+  /** "official": the city's own neighborhood partition; "zcta": ZIP Code Tabulation Areas clipped to the city limits. */
+  geographyKind?: 'official' | 'zcta';
   coverage: string;
+  /** Why reported incidents are not available for this city, when they are not. */
+  incidentsUnavailable?: string;
   center: LngLat;
   bounds: [LngLat, LngLat];
   sources: SourceRecord[];
@@ -151,6 +158,9 @@ export interface DataManifest {
     incidentWindow: { start: string; end: string } | null;
     /** A light outline of the covered neighborhoods for previews: SVG path data in a 0–100 × h viewBox. */
     preview: { height: number; paths: string[] };
+    center: LngLat;
+    geographyKind: 'official' | 'zcta';
+    incidentsUnavailable: string | null;
     sources: SourceRecord[];
   }>;
 }

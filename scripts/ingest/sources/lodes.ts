@@ -2,17 +2,17 @@
 // area characteristics. Used only to flag areas where workers outnumber residents, where per-resident incident
 // rates overstate what residents experience.
 import { gunzipSync } from 'node:zlib';
-import { ALL_COUNTIES } from './census.ts';
+import { STATE_FIPS } from './census.ts';
 import { cached, fetchWithRetry } from '../util.ts';
 
 export const LODES_YEAR = '2023';
-export const LODES_STATES: Record<string, string> = { '17': 'il', '36': 'ny', '06': 'ca', '48': 'tx' };
+export const LODES_STATES: Record<string, string> = Object.fromEntries(Object.entries(STATE_FIPS).map(([abbr, fips]) => [fips, abbr.toLowerCase()]));
 export const lodesUrl = (st: string) => `https://lehd.ces.census.gov/data/lodes/LODES8/${st}/wac/${st}_wac_S000_JT00_${LODES_YEAR}.csv.gz`;
 
-/** { blockGeoid: jobs } for the covered counties of one state. */
-export async function jobsByBlock(stateFips: string) {
+/** { blockGeoid: jobs } for the given counties of one state. */
+export async function jobsByBlock(stateFips: string, counties: string[]) {
   const st = LODES_STATES[stateFips];
-  return cached(`lehd/wac-blocks-${st}-${LODES_YEAR}`, 365, async () => {
+  const all = await cached(`lehd/wac-blocks-${st}-${LODES_YEAR}-state`, 365, async () => {
     const res = await fetchWithRetry(lodesUrl(st));
     const text = gunzipSync(Buffer.from(await res.arrayBuffer())).toString('utf8');
     const out: Record<string, number> = {};
@@ -20,9 +20,11 @@ export async function jobsByBlock(stateFips: string) {
       const first = line.indexOf(',');
       if (first < 0) continue;
       const block = line.slice(0, first);
-      if (!ALL_COUNTIES.some((c) => block.startsWith(c))) continue;
       out[block] = Number(line.slice(first + 1, line.indexOf(',', first + 1)));
     }
     return out;
   });
+  const value: Record<string, number> = {};
+  for (const [block, n] of Object.entries(all.value)) if (counties.some((c) => block.startsWith(c))) value[block] = n;
+  return { retrievedAt: all.retrievedAt, value };
 }

@@ -146,7 +146,7 @@ function CompareTable({ dataset, ids, sharedPriorities, isShared }: { dataset: C
       title: 'Data',
       rows: [
         { label: 'Residents', cells: evs.map((e) => <span className="num">{int(e.hood.population)}</span>) },
-        { label: 'Incident period', cells: evs.map(() => <span className="small">{dataset.incidentMethod ? windowLabel(dataset.incidentMethod.window) : 'Unavailable'}</span>) },
+        { label: 'Incident period', cells: evs.map(() => <span className="small">{dataset.incidentMethod ? windowLabel(dataset.incidentMethod.window) : dataset.incidentsUnavailable ? 'Not published by the city' : 'Unavailable'}</span>) },
         { label: 'Rent benchmark period', cells: evs.map((e) => <span className="small">{e.rent?.source === 'safmr' ? 'HUD FY2026' : e.rent ? 'ACS 2020–2024' : '—'}</span>) },
       ],
     },

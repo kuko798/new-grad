@@ -366,6 +366,15 @@ table.data tr:first-child td { border-top-color: var(--border); }
 .section-heading > p { font-size: 12px; line-height: 1.8; color: var(--muted); }
 .section-heading > a { font-size: 12px; flex-shrink: 0; margin-bottom: 3px; }
 .city-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.city-search { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.city-search .input { max-width: 360px; }
+.city-more { display: flex; justify-content: center; margin-top: 20px; }
+.method-details + .method-details { margin-top: 8px; }
+.method-details > summary { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; cursor: pointer; list-style: none; }
+.method-details > summary::-webkit-details-marker { display: none; }
+.method-details > summary::after { content: '+'; color: var(--muted); font-size: 18px; line-height: 1; margin-left: auto; }
+.method-details[open] > summary::after { content: '−'; }
+.method-details[open] > summary { margin-bottom: 8px; }
 .city-card { --city-bg: #f5f6f8; --city-fill: #b7c0cf; --city-ink: #626d80; position: relative; display: flex; flex-direction: column; min-width: 0; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; overflow: hidden; padding: 20px 18px 0; transition: border-color 180ms, transform 220ms var(--ease-out), box-shadow 220ms; }
 .city-card:hover { transform: translateY(-2px); border-color: #a8b8f0; box-shadow: 0 12px 28px #18191d10; }
 .city-card:active { transform: translateY(-2px); }

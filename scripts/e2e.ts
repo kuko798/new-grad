@@ -46,7 +46,10 @@ async function main() {
     // Home
     await page.goto(BASE, { waitUntil: 'networkidle' });
     await page.getByRole('heading', { level: 1 }).waitFor();
-    check(`${v}: home shows four cities`, (await page.locator('.city-card').count()) === 4);
+    check(`${v}: home shows the first eight cities`, (await page.locator('.city-card').count()) === 8);
+    await page.getByLabel('Find a city').fill('denver');
+    check(`${v}: city search filters`, (await page.locator('.city-card').count()) === 1);
+    await page.getByLabel('Find a city').fill('');
     await shot(page, `${v}-home`);
 
     // Onboarding: city → rent → commute (address) → priorities
@@ -185,6 +188,17 @@ async function main() {
     check(`${v}: tile failure falls back with a notice`, noticed);
     await shot(p4, `${v}-tiles-down`);
     await tileCtx.close();
+
+    // A ZIP-area city, and a city whose police publish no incident data
+    await page.goto(`${BASE}/phoenix`, { waitUntil: 'networkidle' });
+    await page.locator('.results-scroll .result').first().waitFor();
+    check(`${v}: ZIP-area city explains its geography`, await page.getByText(/these are ZIP code areas/).isVisible());
+    const zipLink = await page.locator('.results-scroll .result a[href*="zillow"]').first().getAttribute('href');
+    check(`${v}: ZIP-area Zillow link searches the ZIP`, /\/homes\/for_rent\/\d{5}_rb\/$/.test(zipLink ?? ''), zipLink ?? '');
+    await shot(page, `${v}-phoenix`);
+    await page.goto(`${BASE}/jacksonville`, { waitUntil: 'networkidle' });
+    await page.locator('.results-scroll .result').first().waitFor();
+    check(`${v}: city without incident data says so`, await page.getByText(/Reported incidents are not available for Jacksonville/).isVisible());
 
     // Data page
     await page.goto(`${BASE}/data`, { waitUntil: 'networkidle' });

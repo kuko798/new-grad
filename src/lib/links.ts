@@ -1,4 +1,5 @@
 // Outbound rental search and privacy-safe share links.
+import { isCityId } from './cities.ts';
 import { PRIORITY_LABELS, type AmenityKey, type Preferences, type Priority, type SafetyKey } from './prefs.ts';
 import type { CityDataset, CityId, Neighborhood } from './types.ts';
 
@@ -8,6 +9,9 @@ import type { CityDataset, CityId, Neighborhood } from './types.ts';
  * person to apply instead of being guessed. No listing data is fetched or scraped.
  */
 export function zillowRentalsUrl(hood: Neighborhood, ds: Pick<CityDataset, 'name' | 'state' | 'city'>): string {
+  // ZIP areas search by the ZIP code itself, which Zillow resolves exactly.
+  const zip = /^ZIP (\d{5})$/.exec(hood.name)?.[1];
+  if (zip) return `https://www.zillow.com/homes/for_rent/${zip}_rb/`;
   // Zillow names NYC places by borough ("Greenpoint, Brooklyn"), with Manhattan as "New York".
   const cityName = ds.city === 'nyc' ? (hood.district && hood.district !== 'Manhattan' ? hood.district : 'New York') : ds.name;
   // NTA names carry qualifiers like "(North)"; Zillow's place search ignores them at best.
@@ -36,7 +40,7 @@ export function zillowFilterHints(prefs: Preferences): string[] {
 const PRIORITY_ORDER: Array<'affordability' | 'commute' | SafetyKey | AmenityKey> = [
   'affordability', 'commute', 'violent', 'property', 'vehicle', 'transit', 'grocery', 'parks', 'restaurants', 'nightlife', 'quiet', 'pets', 'stepFree',
 ];
-const CITY_IDS: CityId[] = ['chicago', 'nyc', 'sf', 'austin'];
+
 
 export function priorityCode(prefs: Preferences): string {
   return PRIORITY_ORDER.map((k) => {
@@ -74,7 +78,7 @@ export interface SharedComparison {
 
 export function parseCompareParams(params: URLSearchParams): SharedComparison | null {
   const city = params.get('city') as CityId | null;
-  if (!city || !CITY_IDS.includes(city)) return null;
+  if (!isCityId(city)) return null;
   const ids = (params.get('ids') ?? '')
     .split(',')
     .map((s) => s.trim())

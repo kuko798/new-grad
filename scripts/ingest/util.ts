@@ -1,4 +1,4 @@
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,7 +11,20 @@ export const USER_AGENT = `relocate-fit-ingest/0.1 (+${process.env.INGEST_CONTAC
 
 export const flags = {
   refresh: process.argv.includes('--refresh'),
+  /** Build from cached OpenStreetMap data only; a city with none gets no amenity data. */
+  noOsmFetch: process.argv.includes('--no-osm-fetch'),
+  /** Only fetch and cache OpenStreetMap data, building nothing (one patient worker when Overpass is busy). */
+  osmOnly: process.argv.includes('--osm-only'),
 };
+
+/** A cached entry regardless of its age, or null. */
+export async function peekCache<T>(key: string): Promise<CacheEntry<T> | null> {
+  try {
+    return JSON.parse(await readFile(join(RAW_DIR, `${key}.json`), 'utf8')) as CacheEntry<T>;
+  } catch {
+    return null;
+  }
+}
 
 export function log(...args: unknown[]) {
   console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...args);
@@ -67,13 +80,20 @@ export async function cached<T>(key: string, maxAgeDays: number, produce: () => 
   log(`fetching ${key}`);
   const entry: CacheEntry<T> = { retrievedAt: new Date().toISOString(), value: await produce() };
   await mkdir(dirname(file), { recursive: true });
-  await writeFile(file, JSON.stringify(entry));
+  await atomicWrite(file, JSON.stringify(entry));
   return entry;
+}
+
+/** Writes through a temporary file and a rename, so a parallel reader never sees a half-written file. */
+async function atomicWrite(file: string, text: string) {
+  const tmp = `${file}.${process.pid}.tmp`;
+  await writeFile(tmp, text);
+  await rename(tmp, file);
 }
 
 export async function writeJson(file: string, value: unknown) {
   await mkdir(dirname(file), { recursive: true });
-  await writeFile(file, JSON.stringify(value));
+  await atomicWrite(file, JSON.stringify(value));
 }
 
 /** Month arithmetic on ISO dates (YYYY-MM-DD), staying on the first of the month. */

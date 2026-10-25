@@ -1,6 +1,7 @@
 // Monthly and move-in costs. Every line says whether it is a sourced benchmark, a default assumption the person
 // can edit, or a figure the person entered, so the total never hides where a number came from.
 import { BEDROOM_SHORT, type Preferences } from './prefs.ts';
+import { cityInfo, depositNote } from './cities.ts';
 import { monthlyTransportCost } from './travel.ts';
 import type { CityId, Neighborhood } from './types.ts';
 
@@ -117,13 +118,6 @@ export interface MoveInCost {
   notes: string[];
 }
 
-const DEPOSIT_NOTES: Record<CityId, string> = {
-  nyc: 'New York State caps security deposits at one month and application fees at $20. Under the FARE Act (2025), landlords pay the fee of a broker they hired.',
-  sf: 'California limits most security deposits to one month of rent (AB 12, from July 2024).',
-  chicago: "Chicago's Residential Landlord and Tenant Ordinance governs deposits and requires interest on them; it does not cap the amount.",
-  austin: 'Texas does not cap security deposits; many Austin listings also charge an application and administrative fee.',
-};
-
 export function moveInCost(city: CityId, hood: Neighborhood, prefs: Preferences): MoveInCost | null {
   const rent = rentFigure(hood, prefs);
   if (!rent) return null;
@@ -137,5 +131,5 @@ export function moveInCost(city: CityId, hood: Neighborhood, prefs: Preferences)
   if (a.applicationFees > 0) lines.push({ id: 'application', label: 'Application fees', amount: a.applicationFees, kind: 'entered', note: 'Your figure' });
   if (a.movingCost > 0) lines.push({ id: 'moving', label: 'Moving', amount: a.movingCost, kind: 'entered', note: 'Your figure' });
   if (a.furnitureCost > 0) lines.push({ id: 'furniture', label: 'Furniture and setup', amount: a.furnitureCost, kind: 'entered', note: 'Your figure' });
-  return { lines, total: lines.reduce((s, l) => s + l.amount, 0), notes: [DEPOSIT_NOTES[city], 'Rules change; check current law before you sign. This is not legal advice.'] };
+  return { lines, total: lines.reduce((s, l) => s + l.amount, 0), notes: [depositNote(cityInfo(city)), 'Rules change; check current law before you sign. This is not legal advice.'] };
 }
