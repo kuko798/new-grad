@@ -130,7 +130,8 @@ supermarkets and greengrocers, parks, restaurants and cafés, bars/pubs/nightclu
 stations (with `wheelchair` tags), bus stops and dog parks. Completeness varies with volunteer mapping.
 
 [LEHD LODES 8 WAC 2023](https://lehd.ces.census.gov/data/lodes/LODES8/) gives jobs by block, used only for
-the visitor-heavy flag.
+the visitor-heavy flag. A state that has not published 2023 falls back to its newest year, and the source
+says which: Michigan (Detroit) stops at 2021.
 
 ## Maps, geocoding and routing
 

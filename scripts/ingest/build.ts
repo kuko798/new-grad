@@ -32,7 +32,7 @@ import type { CityConfig, OfficialGeography } from './registry.ts';
 import { ZCTA_URL, countiesInBox, placeBoundary, PLACES_URL, zctasInBox } from './sources/tiger.ts';
 import { BLOCKS_URL, blocksForCounty } from './sources/blocks.ts';
 import { ACS_PERIOD, ZCTA_TRACT_URL, acsTable, tractToZcta } from './sources/census.ts';
-import { LODES_STATES, LODES_YEAR, jobsByBlock, lodesUrl } from './sources/lodes.ts';
+import { LODES_STATES, LODES_YEAR, jobsByBlock } from './sources/lodes.ts';
 import { OSM_DEFINITIONS, osmAll, type OsmCategory, type OsmPoint } from './sources/osm.ts';
 import { SAFMR_FY, SAFMR_URL, safmrByZip } from './sources/safmr.ts';
 import { geojson } from './sources/socrata.ts';
@@ -351,13 +351,15 @@ export async function buildCity(cfg: CityConfig): Promise<CityDataset | null> {
     // Counties across a state line come from the bounding box; only states the city lies in have residents here.
     const parts = await Promise.all(states.filter((st) => LODES_STATES[st]).map((st) => jobsByBlock(st, counties)));
     jobs = Object.assign({}, ...parts.map((p) => p.value));
+    // A state that has not published the current year falls back to its newest one; the source says which.
+    const years = [...new Set(parts.map((p) => p.year))].sort().join(' and ');
     sources.push({
       id: 'lehd-lodes',
-      name: `LEHD Origin-Destination Employment Statistics (LODES 8), workplace area characteristics, ${LODES_YEAR}`,
+      name: `LEHD Origin-Destination Employment Statistics (LODES 8), workplace area characteristics, ${years}`,
       publisher: 'U.S. Census Bureau, Center for Economic Studies',
-      url: lodesUrl(LODES_STATES[states[0]]),
+      url: parts[0].url,
       license: 'Public domain (U.S. Government work)',
-      observationPeriod: `Jobs in ${LODES_YEAR}`,
+      observationPeriod: `Jobs in ${years}${years === LODES_YEAR ? '' : ` (the newest year this state has published; ${LODES_YEAR} is not yet available)`}`,
       retrievedAt: parts[0].retrievedAt,
       updateFrequency: 'Annually, about two years behind',
       staleAfterDays: 900,
