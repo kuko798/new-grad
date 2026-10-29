@@ -52,8 +52,8 @@ export function HomePage() {
   return (
     <div className="home-page">
       <header className="home-header">
-        <Link to="/" className="wordmark" aria-label="Landing home"><Mark size={30} />Landing<span className="wordmark-period">.</span></Link>
-        <nav className="home-nav" aria-label="Discover Landing"><a href="#cities">Explore cities</a><a href="#how-it-works">How it works</a><Link to="/data">Our approach <Icon name="external" size={13} /></Link></nav>
+        <Link to="/" className="wordmark" aria-label="Your Next Corner home"><Mark size={30} />Your Next Corner<span className="wordmark-period">.</span></Link>
+        <nav className="home-nav" aria-label="Discover Your Next Corner"><a href="#cities">Explore cities</a><a href="#how-it-works">How it works</a><Link to="/data">Our approach <Icon name="external" size={13} /></Link></nav>
         <Link to={prefs.onboarded && prefs.city ? `/${prefs.city}` : '/start'} className="btn home-header-cta">{prefs.onboarded ? 'Your neighborhoods' : 'Find your place'}<Icon name="chevron" size={15} /></Link>
       </header>
 
@@ -126,7 +126,7 @@ export function HomePage() {
 
       <section className="method-banner" aria-labelledby="method-title"><div className="method-symbol" aria-hidden="true"><Icon name="data" size={38} /></div><div><p className="eyebrow">A LITTLE TRANSPARENCY GOES A LONG WAY</p><h2 id="method-title">Real places. Real data. An honest picture.</h2><p>Every figure has a source and a date. Missing data stays missing. Reported incidents are shown with context, never as a safety grade. Your preferences are saved in your browser.</p></div><Link to="/data" className="btn">Behind the numbers <Icon name="chevron" size={16} /></Link></section>
 
-      <footer className="home-footer"><div><Link to="/" className="wordmark"><Mark size={24} />Landing<span className="wordmark-period">.</span></Link><p>A better place to begin.</p></div><p>Built on open data. Made for your next chapter.<br /><Link to="/data" className="text-link">Sources, methods & limitations <Icon name="arrowUpRight" size={13} /></Link></p><a href="#home-title" className="back-top">Back to top <Icon name="arrowUp" size={13} /></a></footer>
+      <footer className="home-footer"><div><Link to="/" className="wordmark"><Mark size={24} />Your Next Corner<span className="wordmark-period">.</span></Link><p>A better place to begin.</p></div><p>Built on open data. Made for your next chapter.<br /><Link to="/data" className="text-link">Sources, methods & limitations <Icon name="arrowUpRight" size={13} /></Link></p><a href="#home-title" className="back-top">Back to top <Icon name="arrowUp" size={13} /></a></footer>
     </div>
   );
 }

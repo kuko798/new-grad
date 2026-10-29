@@ -171,9 +171,9 @@ export default function DataPage() {
       </section>
 
       <section style={{ marginTop: 32 }} aria-labelledby="privacy">
-        <h2 id="privacy" className="section-title">Privacy and how Landing is paid for</h2>
+        <h2 id="privacy" className="section-title">Privacy and how Your Next Corner is paid for</h2>
         <div className="prose" style={{ marginTop: 8 }}>
-          <p>There are no accounts. Your preferences, budget, pay, addresses, saved neighborhoods and comparisons are stored in this browser's local storage. An address you type is sent to our server, which forwards it to the Census Bureau geocoder. The server does not log it or write it to disk; the lookup result is held in memory for up to an hour to avoid repeat requests. Shared comparison links contain only the city, neighborhood ids and priority levels. Landing includes no analytics or advertising trackers.</p>
+          <p>There are no accounts. Your preferences, budget, pay, addresses, saved neighborhoods and comparisons are stored in this browser's local storage. An address you type is sent to our server, which forwards it to the Census Bureau geocoder. The server does not log it or write it to disk; the lookup result is held in memory for up to an hour to avoid repeat requests. Shared comparison links contain only the city, neighborhood ids and priority levels. Your Next Corner includes no analytics or advertising trackers.</p>
           <p>Search, neighborhood pages and comparisons are free. A sponsored message, if any, appears only at the foot of a neighborhood page, labelled "Sponsored", and has no effect on rankings, matches or rental links. Zillow links carry no paid placement.</p>
         </div>
       </section>

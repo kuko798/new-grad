@@ -1,4 +1,4 @@
-# Landing
+# Your Next Corner
 
 A relocation planner that answers one question: **which neighborhoods fit my budget, commute, lifestyle and
 safety preferences?** It covers the 40 U.S. cities that gained the most new residents in 2024, from New York City
@@ -71,7 +71,7 @@ Scheduling:
 - **GitHub Actions**: `.github/workflows/refresh-data.yml` runs weekly, then opens a pull request with the new
   data after tests and the health check. Set the `INGEST_CONTACT` variable and, optionally, a
   `SOCRATA_APP_TOKEN` secret.
-- **cron on a server**: `17 9 * * 1 cd /srv/landing && npm run ingest && npm run data:health`, with `DATA_DIR`
+- **cron on a server**: `17 9 * * 1 cd /srv/yournextcorner && npm run ingest && npm run data:health`, with `DATA_DIR`
   pointing at the directory the server reads, so no rebuild or restart is needed.
 
 Staleness thresholds per source: incidents 21 days (NYC 120, because it is quarterly; Austin 30), OSM 60 days,
@@ -98,10 +98,10 @@ Any host that runs Node 22.18+:
 
 ```bash
 npm ci && npm run build
-PORT=8787 DATA_DIR=/var/lib/landing/data node server/index.ts
+PORT=8787 DATA_DIR=/var/lib/yournextcorner/data node server/index.ts
 ```
 
-Or with Docker: `docker build -t landing . && docker run -p 8787:8787 -v landing-data:/app/data landing`.
+Or with Docker: `docker build -t yournextcorner . && docker run -p 8787:8787 -v yournextcorner-data:/app/data yournextcorner`.
 
 Put it behind HTTPS. The server sends a strict Content-Security-Policy that allows only its own origin,
 OpenFreeMap tiles and the bundled Geist fonts. If you change tile or font providers, update `SECURITY_HEADERS` in

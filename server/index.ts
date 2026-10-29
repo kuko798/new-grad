@@ -156,4 +156,4 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => console.log(`Landing on http://localhost:${PORT} (data from ${DATA})`));
+server.listen(PORT, () => console.log(`Your Next Corner on http://localhost:${PORT} (data from ${DATA})`));

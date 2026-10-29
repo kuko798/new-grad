@@ -22,7 +22,7 @@ export function Shell() {
     <div className="app">
       <a className="skip-link" href="#main">Skip to content</a>
       <nav className="rail" aria-label="Main">
-        <NavLink to="/" className="rail-mark" aria-label="Landing home">
+        <NavLink to="/" className="rail-mark" aria-label="Your Next Corner home">
           <Mark size={30} />
         </NavLink>
         <RailLink to="/" icon="home" label="Home" end />

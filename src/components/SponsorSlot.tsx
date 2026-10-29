@@ -1,6 +1,6 @@
 // A single, clearly labelled sponsorship slot. It appears only at the foot of a neighborhood page, never inside
 // rankings, results or rental links, and renders nothing unless a sponsor is configured at build time.
-// Sponsors receive no user inputs: the slot is static content with no tracking parameters added by Landing.
+// Sponsors receive no user inputs: the slot is static content with no tracking parameters added by Your Next Corner.
 const text = import.meta.env.VITE_SPONSOR_TEXT as string | undefined;
 const url = import.meta.env.VITE_SPONSOR_URL as string | undefined;
 const name = import.meta.env.VITE_SPONSOR_NAME as string | undefined;

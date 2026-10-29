@@ -371,7 +371,7 @@ function Detail({ dataset, id }: { dataset: CityDataset; id: string }) {
             <a className="btn" style={{ marginTop: 12 }} href={zillowRentalsUrl(h, dataset)} target="_blank" rel="noopener noreferrer">
               Open Zillow rentals <Icon name="external" size={14} />
             </a>
-            <p className="small muted" style={{ marginTop: 10 }}>Landing does not show or rank listings, and no listing or placement is paid for.</p>
+            <p className="small muted" style={{ marginTop: 10 }}>Your Next Corner does not show or rank listings, and no listing or placement is paid for.</p>
           </section>
 
           <section className="panel" aria-labelledby="sources">
