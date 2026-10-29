@@ -24,11 +24,13 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self'",
+    // Google AdSense loads its scripts, frames and creatives from these hosts; ad images can come from any HTTPS host.
+    "script-src 'self' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net https://*.googletagservices.com https://*.adtrafficquality.google",
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
-    "img-src 'self' data: blob: https://tiles.openfreemap.org",
-    "connect-src 'self' https://tiles.openfreemap.org",
+    "img-src 'self' data: blob: https:",
+    "connect-src 'self' https://tiles.openfreemap.org https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net https://*.adtrafficquality.google",
+    "frame-src https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.adtrafficquality.google",
     "worker-src 'self' blob:",
     "child-src blob:",
     "frame-ancestors 'none'",

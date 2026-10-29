@@ -118,7 +118,9 @@ production traffic, consider self-hosted tiles.
 - Addresses pass through `/api/geocode` to the Census Bureau. The server does not log query strings or write
   them to disk; results are cached in memory for an hour.
 - Share links contain the city, up to three neighborhood ids and a 13-digit priority code. Nothing else.
-- No analytics or advertising scripts are included. If you add analytics, exclude every input and URL query.
+- Google AdSense is loaded from `index.html` (publisher id in the script tag and in `public/ads.txt`); the
+  Content-Security-Policy in `vercel.json` and `server/index.ts` allows Google's ad hosts. No inputs are passed to
+  it and none appear in URLs. No analytics are included; if you add any, exclude every input and URL query.
 - The sponsorship slot (`VITE_SPONSOR_*`) renders one labelled message at the foot of neighborhood pages. It is
   never shown in results, never affects rankings, and receives no inputs. Core features have no paywall.
 

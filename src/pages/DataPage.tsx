@@ -68,7 +68,8 @@ export default function DataPage() {
   const manifest = useManifest();
   const [health, setHealth] = useState<Health | 'error' | null>(null);
   useEffect(() => {
-    fetch('/api/health').then((r) => (r.ok ? r.json() : Promise.reject())).then(setHealth, () => setHealth('error'));
+    // A degraded report comes back as 503 with the same body, so read it either way.
+    fetch('/api/health').then((r) => (r.ok || r.status === 503 ? r.json() : Promise.reject())).then(setHealth, () => setHealth('error'));
   }, []);
 
   return (
@@ -173,7 +174,8 @@ export default function DataPage() {
       <section style={{ marginTop: 32 }} aria-labelledby="privacy">
         <h2 id="privacy" className="section-title">Privacy and how Your Next Corner is paid for</h2>
         <div className="prose" style={{ marginTop: 8 }}>
-          <p>There are no accounts. Your preferences, budget, pay, addresses, saved neighborhoods and comparisons are stored in this browser's local storage. An address you type is sent to our server, which forwards it to the Census Bureau geocoder. The server does not log it or write it to disk; the lookup result is held in memory for up to an hour to avoid repeat requests. Shared comparison links contain only the city, neighborhood ids and priority levels. Your Next Corner includes no analytics or advertising trackers.</p>
+          <p>There are no accounts. Your preferences, budget, pay, addresses, saved neighborhoods and comparisons are stored in this browser's local storage. An address you type is sent to our server, which forwards it to the Census Bureau geocoder. The server does not log it or write it to disk; the lookup result is held in memory for up to an hour to avoid repeat requests. Shared comparison links contain only the city, neighborhood ids and priority levels. Your Next Corner includes no analytics.</p>
+          <p>Ads on this site are served by Google AdSense. Google's ad script runs on these pages and may use cookies or similar identifiers to show and measure ads; <a className="text-link" href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noreferrer">how Google uses information from sites that show its ads</a>. Your Next Corner does not pass your budget, pay, addresses or other inputs to Google, and they never appear in page addresses.</p>
           <p>Search, neighborhood pages and comparisons are free. A sponsored message, if any, appears only at the foot of a neighborhood page, labelled "Sponsored", and has no effect on rankings, matches or rental links. Zillow links carry no paid placement.</p>
         </div>
       </section>
