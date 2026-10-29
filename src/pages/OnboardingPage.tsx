@@ -34,7 +34,16 @@ export function OnboardingPage() {
       <p className="subtitle">{s.help}</p>
 
       <div style={{ marginTop: 24 }}>
-        {step === 0 ? <CityField prefs={prefs} setPrefs={setPrefs} /> : null}
+        {step === 0 ? (
+          <CityField
+            prefs={prefs}
+            // Choosing a city should not skip ahead: stay on this step until Continue.
+            setPrefs={(u) => {
+              setPrefs(u);
+              if (!params.get('step')) setParams({ step: '0' }, { replace: true });
+            }}
+          />
+        ) : null}
         {step === 1 ? <HomeFields prefs={prefs} setPrefs={setPrefs} /> : null}
         {step === 2 ? <CommuteFields prefs={prefs} setPrefs={setPrefs} dataset={city.status === 'ready' ? city.data : null} /> : null}
         {step === 3 ? <PriorityFields prefs={prefs} setPrefs={setPrefs} /> : null}

@@ -12,6 +12,7 @@ import {
   type TravelMode,
 } from '../lib/prefs.ts';
 import { BEDROOM_KEYS, type CityDataset, type CityId, type LngLat } from '../lib/types.ts';
+import { cityInfo } from '../lib/cities.ts';
 import { CITY_NAMES, CITY_ORDER } from '../state/data.ts';
 
 type SetPrefs = (update: Partial<Preferences> | ((p: Preferences) => Preferences)) => void;
@@ -97,14 +98,26 @@ export function PriorityRow({ label, help, value, onChange }: { label: string; h
   );
 }
 
+/** Forty cities: a dropdown, alphabetical with the state so same-named places stay clear. */
+const CITY_OPTIONS = [...CITY_ORDER].sort((a, b) => CITY_NAMES[a].localeCompare(CITY_NAMES[b]));
+
 export function CityField({ prefs, setPrefs }: { prefs: Preferences; setPrefs: SetPrefs }) {
+  const id = useId();
   return (
-    <Segmented<CityId | ''>
-      label="Destination city"
-      value={prefs.city ?? ''}
-      options={CITY_ORDER.map((c) => ({ value: c, label: CITY_NAMES[c] }))}
-      onChange={(c) => setPrefs({ city: (c || null) as CityId | null, destinations: c === prefs.city ? prefs.destinations : [] })}
-    />
+    <Field label="Destination city" htmlFor={`${id}-city`} className="city-field">
+      <select
+        id={`${id}-city`}
+        className="select"
+        value={prefs.city ?? ''}
+        onChange={(e) => {
+          const c = (e.target.value || null) as CityId | null;
+          setPrefs({ city: c, destinations: c === prefs.city ? prefs.destinations : [] });
+        }}
+      >
+        <option value="" disabled>Choose a city</option>
+        {CITY_OPTIONS.map((c) => <option key={c} value={c}>{CITY_NAMES[c]}, {cityInfo(c).state}</option>)}
+      </select>
+    </Field>
   );
 }
 

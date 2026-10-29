@@ -33,6 +33,13 @@ async function main() {
   const executablePath = CANDIDATES.find((p) => existsSync(p));
   if (!executablePath) throw new Error('No Chrome or Edge found; set CHROME_PATH.');
   const browser = await chromium.launch({ executablePath, headless: true, args: ['--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  // Ads keep the network busy (so "networkidle" never comes) and should not be requested by tests: block Google's ad hosts.
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (options) => {
+    const ctx = await newContext(options);
+    await ctx.route(/googlesyndication\.com|doubleclick\.net|adtrafficquality\.google|googletagservices\.com|adservice\.google\.com/, (r) => r.abort());
+    return ctx;
+  };
 
   for (const viewport of [{ name: 'desktop', width: 1440, height: 900 }, { name: 'phone', width: 390, height: 844 }]) {
     if (only && only !== viewport.name) continue;
@@ -178,6 +185,17 @@ async function main() {
     await shot(p3, `${v}-error`);
     await errCtx.close();
 
+    // Onboarding from scratch: the city is chosen from a dropdown
+    const startCtx = await browser.newContext({ viewport });
+    const p5 = await startCtx.newPage();
+    await p5.goto(`${BASE}/start`, { waitUntil: 'domcontentloaded' });
+    await p5.getByLabel('Destination city').selectOption('denver');
+    await p5.getByRole('button', { name: 'Continue' }).click();
+    const toRent = await p5.getByText('Step 2 of 4 · Denver').waitFor({ timeout: 5000 }).then(() => true, () => false);
+    if (!toRent) await shot(p5, `${v}-start-dropdown`);
+    check(`${v}: city dropdown starts onboarding`, toRent);
+    await startCtx.close();
+
     // Basemap failure: block tiles, boundaries still render with a notice
     const tileCtx = await browser.newContext({ viewport });
     const p4 = await tileCtx.newPage();
@@ -205,7 +223,9 @@ async function main() {
     check(`${v}: data page lists sources`, (await page.locator('table.data tbody tr').count()) > 10);
     await shot(page, `${v}-data`);
 
-    check(`${v}: no console errors`, errors.filter((e) => !/tiles\.openfreemap|ERR_FAILED|net::/.test(e)).length === 0, errors.slice(0, 3).join(' | '));
+    // /api/health answers 503 when any source is stale (the browser logs that as an error); the page shows it.
+    const unexpected = errors.filter((e) => !/tiles\.openfreemap|ERR_FAILED|net::|status of 503/.test(e));
+    check(`${v}: no console errors`, unexpected.length === 0, unexpected.slice(0, 3).join(' | '));
     await ctx.close();
   }
   await browser.close();
