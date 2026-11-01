@@ -19,7 +19,7 @@ export function Shell() {
   const savedCount = Object.values(saved).reduce((s, l) => s + (l?.length ?? 0), 0);
   const searchTo = prefs.city ? `/${prefs.city}` : '/start';
   return (
-    <div className="app">
+    <div className={`app ${pathname === '/' ? 'app-home' : ''}`}>
       <a className="skip-link" href="#main">Skip to content</a>
       <nav className="rail" aria-label="Main">
         <NavLink to="/" className="rail-mark" aria-label="Your Next Corner home">
