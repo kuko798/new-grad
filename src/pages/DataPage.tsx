@@ -73,10 +73,11 @@ export default function DataPage() {
   }, []);
 
   return (
-    <div className="page" style={{ maxWidth: 1080 }}>
+    <div className="page data-page" style={{ maxWidth: 1080 }}>
       <h1 className="title">Data and methods</h1>
       <p className="subtitle">Where every figure comes from, how matching works, and what the data cannot tell you. No language model or paid data feed is involved: results come from the datasets below and the rules on this page.</p>
 
+      <nav className="method-nav" aria-label="On this page"><a href="#matching">Matching</a><a href="#incidents">Incidents</a><a href="#rent">Rent</a><a href="#commute">Commute</a><a href="#sources">Sources</a><a href="#privacy">Privacy</a></nav>
       <section style={{ marginTop: 32 }} aria-labelledby="matching">
         <h2 id="matching" className="section-title">How matching works</h2>
         <div className="prose" style={{ marginTop: 8 }}>

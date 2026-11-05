@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { PlannerEmpty } from '../components/PlannerEmpty.tsx';
 import { money } from '../lib/format.ts';
 import { rentFigure } from '../lib/cost.ts';
 import type { CityId } from '../lib/types.ts';
@@ -41,15 +42,12 @@ export default function SavedPage() {
   const { saved } = useStore();
   const cities = CITY_ORDER.filter((c) => (saved[c] ?? []).length);
   return (
-    <div className="page" style={{ maxWidth: 860 }}>
+    <div className="page saved-page">
       <h1 className="title">Saved neighborhoods</h1>
       <p className="subtitle">Saved in this browser only. Clearing site data removes them.</p>
       <div style={{ marginTop: 20 }}>
         {cities.length ? cities.map((c) => <CitySaved key={c} city={c} ids={saved[c]!} />) : (
-          <div className="empty">
-            Nothing saved yet. Use Save on any neighborhood to keep it here.
-            <Link className="btn" to="/">Choose a city</Link>
-          </div>
+          <PlannerEmpty kind="saved" />
         )}
       </div>
     </div>

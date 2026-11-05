@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/Icon.tsx';
+import { PlannerEmpty } from '../components/PlannerEmpty.tsx';
 import { moveInCost } from '../lib/cost.ts';
 import { incidentIndex } from '../lib/incidentIndex.ts';
 import { dec1, int, money, relativeWords, windowLabel } from '../lib/format.ts';
@@ -24,10 +25,7 @@ export default function ComparePage() {
       <div className="page">
         <h1 className="title">Compare neighborhoods</h1>
         <p className="subtitle">Choose up to three neighborhoods with Compare on any result to see cost, commute, reported incidents and amenities side by side.</p>
-        <div className="empty" style={{ marginTop: 24 }}>
-          Nothing selected to compare yet.
-          <Link className="btn" to="/">Choose a city</Link>
-        </div>
+        <PlannerEmpty kind="compare" />
       </div>
     );
   }
@@ -171,7 +169,8 @@ function CompareTable({ dataset, ids, sharedPriorities, isShared }: { dataset: C
       ) : null}
       {missing ? <p className="notice" style={{ marginTop: 12 }}>{missing} selected {missing === 1 ? 'area is' : 'areas are'} no longer in this city's data and {missing === 1 ? 'is' : 'are'} not shown.</p> : null}
 
-      <div className="panel compare-scroll" style={{ marginTop: 20 }}>
+      <p className="small muted compare-hint">Scroll the table horizontally on smaller screens to see every neighborhood.</p>
+      <div className="panel compare-scroll" style={{ marginTop: 20 }} role="region" aria-label="Neighborhood comparison" tabIndex={0}>
         <table className="compare-table">
           <thead>
             <tr>
@@ -205,7 +204,7 @@ function CompareTable({ dataset, ids, sharedPriorities, isShared }: { dataset: C
 function FragmentRows({ title, rows, cols }: { title: string; rows: Row[]; cols: number }) {
   return (
     <>
-      <tr className="group"><th scope="rowgroup" colSpan={cols + 1}>{title}</th></tr>
+      <tr className="group"><th scope="rowgroup" colSpan={cols + 1}><span className="compare-group-title">{title}</span></th></tr>
       {rows.map((r) => (
         <tr key={r.label}>
           <th scope="row">{r.label}</th>
