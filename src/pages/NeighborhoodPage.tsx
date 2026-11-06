@@ -4,6 +4,7 @@ import { FitLedger } from '../components/FitLedger.tsx';
 import { Icon } from '../components/Icon.tsx';
 import { PreferencesDrawer } from '../components/PreferencesDrawer.tsx';
 import { SponsorSlot } from '../components/SponsorSlot.tsx';
+import { PartnerProperties } from '../components/PartnerProperties.tsx';
 import { moveInCost, type CostLine } from '../lib/cost.ts';
 import { INDEX_WEIGHTS, incidentIndex } from '../lib/incidentIndex.ts';
 import { dayMonthYear, dec1, int, money, relativeWords, trendWords, windowLabel, labelText } from '../lib/format.ts';
@@ -391,6 +392,7 @@ function Detail({ dataset, id }: { dataset: CityDataset; id: string }) {
         </div>
       </div>
 
+      <PartnerProperties city={dataset.city} neighborhood={h.id} maxRent={prefs.maxRent ? prefs.maxRent * prefs.people : undefined} bedrooms={{studio:0,br1:1,br2:2,br3:3}[prefs.bedrooms]} pets={prefs.pets} parking={prefs.needsParking} eligible={ev.matches && !prefs.totalHousingBudget && !prefs.moveDate} />
       <SponsorSlot />
 
       <PreferencesDrawer key={drawer ?? 'closed'} open={drawer !== null} initialTab={drawer ?? 'priorities'} onClose={() => setDrawer(null)} dataset={dataset} />

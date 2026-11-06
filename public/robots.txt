@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /partner/
+Disallow: /partners/accept
+Disallow: /partners/login
+Disallow: /partners/recover
+Disallow: /api/
+Sitemap: https://www.yournextcorner.com/property-sitemap.xml

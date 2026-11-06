@@ -6,6 +6,8 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkManifest } from './health.ts';
+import { partnerAPI } from './partners/api.ts';
+import { publicPageHTML, propertySitemap } from './partners/pages.ts';
 
 const ROOT = resolve(fileURLToPath(import.meta.url), '..', '..');
 const DIST = resolve(process.env.DIST_DIR ?? join(ROOT, 'dist'));
@@ -129,7 +131,13 @@ const server = createServer(async (req, res) => {
   }
   // Deliberately no request logging of query strings: they can contain addresses.
   try {
+    if (url.pathname.startsWith('/api/partners/') || url.pathname.startsWith('/api/out/')) return await partnerAPI(req, res);
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"Method not allowed"}');
+    if (url.pathname==='/property-sitemap.xml') return await propertySitemap(req,res);
+    if (url.pathname==='/partners' || url.pathname.startsWith('/properties/')) {
+      const page=await publicPageHTML(url.pathname);
+      return send(res,page.status,page.html,'text/html; charset=utf-8',{'Cache-Control':'no-store'});
+    }
     if (url.pathname === '/api/geocode') return await geocode(req, res, url);
     if (url.pathname === '/api/health') {
       const report = await checkManifest(DATA);
@@ -151,7 +159,7 @@ const server = createServer(async (req, res) => {
     }
     // Client-side routes fall back to the app shell.
     const html = await readFile(join(DIST, 'index.html'));
-    send(res, 200, html, TYPES['.html'], { 'Cache-Control': 'no-cache' });
+    send(res, 200, html, TYPES['.html'], { 'Cache-Control': 'no-cache', ...(/^\/(partner|admin)\//.test(url.pathname) || /^\/partners\//.test(url.pathname) ? {'X-Robots-Tag':'noindex, nofollow'} : {}) });
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return send(res, 404, '{"error":"Not found"}');
     console.error('request failed', url.pathname, (err as Error).message);

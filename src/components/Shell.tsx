@@ -17,10 +17,11 @@ function RailLink({ to, icon, label, short, count, end }: { to: string; icon: Ic
 export function Shell() {
   const { prefs, compare, saved, toast } = useStore();
   const { pathname } = useLocation();
+  const partnership = /^\/(partners|partner|admin)(\/|$)/.test(pathname);
   const savedCount = Object.values(saved).reduce((s, l) => s + (l?.length ?? 0), 0);
   const searchTo = prefs.city ? `/${prefs.city}` : '/start';
   return (
-    <div className={`app ${pathname === '/' ? 'app-home' : 'app-planner'}`}>
+    <div className={`app ${pathname === '/' ? 'app-home' : 'app-planner'}${partnership ? ' app-partners' : ''}`}>
       <a className="skip-link" href="#main">Skip to content</a>
       <nav className="rail" aria-label="Main">
         <NavLink to="/" className="rail-mark" aria-label="Your Next Corner home">
@@ -38,7 +39,7 @@ export function Shell() {
         <RailLink to="/data" icon="data" label="Data and methods" short="Data" />
       </nav>
       <main id="main" className="canvas" tabIndex={-1}>
-        {pathname !== '/' ? <header className="planner-masthead"><NavLink to="/" className="corner-brand"><Mark size={28} />Your Next Corner</NavLink><NavLink to="/" className="planner-city-link">Change city <Icon name="arrowUpRight" size={16} /></NavLink></header> : null}
+        {pathname !== '/' ? <header className="planner-masthead"><NavLink to="/" className="corner-brand"><Mark size={28} />Your Next Corner</NavLink><NavLink to="/" className="planner-city-link">{partnership ? 'Explore neighborhoods' : 'Change city'} <Icon name="arrowUpRight" size={16} /></NavLink></header> : null}
         <Outlet />
       </main>
       <div className="sr-only" aria-live="polite">{toast}</div>

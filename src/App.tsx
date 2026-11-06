@@ -5,12 +5,15 @@ import { StoreProvider } from './state/store.tsx';
 import { HomePage } from './pages/HomePage.tsx';
 import { OnboardingPage } from './pages/OnboardingPage.tsx';
 import { NotFound } from './pages/NotFound.tsx';
+import { partnerRequest } from './lib/partner-api.ts';
 
 const ResultsPage = lazy(() => import('./pages/ResultsPage.tsx'));
 const NeighborhoodPage = lazy(() => import('./pages/NeighborhoodPage.tsx'));
 const ComparePage = lazy(() => import('./pages/ComparePage.tsx'));
 const SavedPage = lazy(() => import('./pages/SavedPage.tsx'));
 const DataPage = lazy(() => import('./pages/DataPage.tsx'));
+const PartnershipPage = lazy(() => import('./pages/PartnershipPage.tsx'));
+const PublicPropertyPage = lazy(() => import('./pages/PublicPropertyPage.tsx'));
 
 function PageLoading() {
   return (
@@ -33,6 +36,7 @@ function FocusOnNavigate() {
 }
 
 export function App() {
+  useEffect(()=>{const code=new URLSearchParams(location.search).get('utm_campaign');if(code&&/^[A-Za-z0-9_-]{10,40}$/.test(code))partnerRequest('referral',{code}).catch(()=>{});},[]);
   return (
     <StoreProvider>
       <BrowserRouter>
@@ -45,6 +49,10 @@ export function App() {
               <Route path="compare" element={<ComparePage />} />
               <Route path="saved" element={<SavedPage />} />
               <Route path="data" element={<DataPage />} />
+              <Route path="partners/*" element={<PartnershipPage />} />
+              <Route path="partner/*" element={<PartnershipPage />} />
+              <Route path="admin/*" element={<PartnershipPage />} />
+              <Route path="properties/:slug" element={<PublicPropertyPage />} />
               <Route path=":city" element={<ResultsPage />} />
               <Route path=":city/n/:id" element={<NeighborhoodPage />} />
               <Route path="*" element={<NotFound />} />

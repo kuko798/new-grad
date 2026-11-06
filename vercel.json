@@ -3,8 +3,21 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/((?!api/|data/|assets/|fonts/|images/).*)", "destination": "/index.html" }],
+  "functions": {
+    "api/partners/[...path].ts": { "includeFiles": "public/data/*.json", "maxDuration": 60 },
+    "api/partner-page.ts": { "includeFiles": "dist/index.html" }
+  },
+  "crons": [{ "path": "/api/partners/jobs", "schedule": "0 10 * * *" }],
+  "rewrites": [
+    { "source": "/partners", "destination": "/api/partner-page" },
+    { "source": "/properties/:slug", "destination": "/api/partner-page?slug=:slug" },
+    { "source": "/property-sitemap.xml", "destination": "/api/property-sitemap" },
+    { "source": "/((?!api/|data/|assets/|fonts/|images/).*)", "destination": "/index.html" }
+  ],
   "headers": [
+    { "source": "/partner/:path*", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }, { "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/admin/:path*", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }, { "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/partners/(apply|login|recover|accept)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
     {
       "source": "/(.*)",
       "headers": [
